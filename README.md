@@ -32,21 +32,23 @@ Whenever you click **"Disable GFN Booster"** or simply **"Quit"** the app, it au
 
 ### Option 1: Download the App (Recommended)
 1. Go to the [Releases](../../releases) page.
-2. Download the latest `GFN_Booster.dmg` file.
+2. Download the latest `GFN_Booster_v1.0.1.dmg` file.
 3. Open the `.dmg` and drag the app to your Applications folder.
+
+> **⚠️ Important: "App is damaged" error**
+> Since this app is open-source and isn't signed with a paid Apple Developer certificate, macOS Gatekeeper tags it with quarantine attributes when downloaded via a browser. If you get an error saying the app is damaged and should be moved to the Trash, simply open your **Terminal** and run this command to clear the quarantine flag:
+> ```bash
+> xattr -cr /Applications/"GFN Booster.app"
+> ```
+> After that, you can open the app normally!
 
 ### Option 2: Build from Source
 To compile and run from the source code directly via terminal:
 
 ```bash
 # Clone the repository
-git clone https://github.com/victorbrandaao/GFNOptimizer.git
+git clone [https://github.com/your-username/GFNOptimizer.git](https://github.com/your-username/GFNOptimizer.git)
 cd GFNOptimizer
 
 # Build and run via Swift Package Manager
 swift run
-
-Requirements
-macOS 12.0 or newer (Fully compatible with Apple Silicon M1/M2/M3 and Intel).
-Swift 5.9+ (if building from source).
-Developed independently for the Mac cloud gaming community. Feel free to open Issues or submit Pull Requests!
