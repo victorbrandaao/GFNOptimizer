@@ -48,7 +48,6 @@ Developed independently for the Mac cloud gaming community. Feel free to open Is
 
 ### README.md (Versão em Português)
 
-```markdown
 # GFN Booster (macOS)
 
 Um utilitário nativo e open-source para a barra de menus do macOS desenvolvido em Swift, focado em eliminar *ping spikes* (saltos de latência) e otimizar o sistema para sessões estáveis no GeForce NOW.
