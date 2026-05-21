@@ -16,9 +16,9 @@ class SystemManager {
             killall -HUP mDNSResponder; \
             tmutil disable; \
             purge; \
-            open -a "GeForce NOW"; \
+            open -a "NVIDIA GeForce NOW" || open -a "GeForce NOW"; \
             sleep 4; \
-            GFN_PID=$(pgrep -x "GeForce NOW" | head -n 1); \
+            GFN_PID=$(pgrep -x "NVIDIA GeForce NOW" | head -n 1); \
             if [ ! -z "$GFN_PID" ]; then renice -20 -p $GFN_PID; fi
             """
             
