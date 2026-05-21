@@ -10,14 +10,22 @@ class SystemManager {
         DispatchQueue.global(qos: .userInitiated).async {
             self.startCaffeinate()
             
+            // Abre pelo Bundle ID oficial do aplicativo (Infalível, ignora o nome do arquivo)
+            let openProcess = Process()
+            openProcess.launchPath = "/bin/sh"
+            openProcess.arguments = ["-c", "open -b com.nvidia.gfnpc.mac || open -a GeForceNOW"]
+            openProcess.launch()
+            
+            // Aguarda 4 segundos para o aplicativo carregar na tela
+            Thread.sleep(forTimeInterval: 4.0)
+            
+            // Roda os comandos de baixo nível (este bloco pedirá a senha)
             let enableScript = """
             ifconfig awdl0 down; \
             dscacheutil -flushcache; \
             killall -HUP mDNSResponder; \
             tmutil disable; \
             purge; \
-            open -a "NVIDIA GeForce NOW" || open -a "GeForce NOW"; \
-            sleep 4; \
             GFN_PID=$(pgrep -x "NVIDIA GeForce NOW" | head -n 1); \
             if [ ! -z "$GFN_PID" ]; then renice -20 -p $GFN_PID; fi
             """
