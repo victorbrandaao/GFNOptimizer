@@ -4,25 +4,25 @@ import AppKit
 class AppDelegate: NSObject, NSApplicationDelegate {
     var statusItem: NSStatusItem!
     
-    // Ícones da barra de menus usando SF Symbols
+    // Menu bar icons using SF Symbols
     let config = NSImage.SymbolConfiguration(scale: .large)
     lazy var offImage = NSImage(systemSymbolName: "gamecontroller", accessibilityDescription: nil)?.withSymbolConfiguration(config)
     lazy var onImage = NSImage(systemSymbolName: "gamecontroller.fill", accessibilityDescription: nil)?.withSymbolConfiguration(config)
     
-    // Elementos dinâmicos do menu
+    // Dynamic menu elements
     var mainActionItem: NSMenuItem!
     var statusTextItem: NSMenuItem!
     
-    // Itens informativos das otimizações
+    // Informational items for optimizations
     var optimTitle: NSMenuItem!
     var awdlItem: NSMenuItem!
     var dnsItem: NSMenuItem!
     var mouseItem: NSMenuItem!
     var tmItem: NSMenuItem!
-    var sleepItem: NSMenuItem! // Nova otimização visual
+    var sleepItem: NSMenuItem!
     
     var isBoosterActive = false
-    var caffeinateProcess: Process? // Monitora o processo anti-sono do Mac
+    var caffeinateProcess: Process?
 
     static func main() {
         let app = NSApplication.shared
@@ -43,42 +43,42 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     func setupMenu() {
         let menu = NSMenu()
         
-        // 1. Botão Principal
-        mainActionItem = NSMenuItem(title: "Ativar GFN Booster", action: #selector(toggleBooster), keyEquivalent: "b")
+        // 1. Main Button
+        mainActionItem = NSMenuItem(title: "Enable GFN Booster", action: #selector(toggleBooster), keyEquivalent: "b")
         mainActionItem.target = self
         menu.addItem(mainActionItem)
         
         menu.addItem(NSMenuItem.separator())
         
-        // 2. Status Geral
-        statusTextItem = NSMenuItem(title: "Status: Padrão", action: nil, keyEquivalent: "")
+        // 2. General Status
+        statusTextItem = NSMenuItem(title: "Status: Default", action: nil, keyEquivalent: "")
         statusTextItem.isEnabled = false
         menu.addItem(statusTextItem)
         
-        // 3. Área de Informações Expandida (Oculta por padrão)
-        optimTitle = NSMenuItem(title: "Otimizações Ativas:", action: nil, keyEquivalent: "")
+        // 3. Expanded Info Area (Hidden by default)
+        optimTitle = NSMenuItem(title: "Active Optimizations:", action: nil, keyEquivalent: "")
         optimTitle.isEnabled = false
         menu.addItem(optimTitle)
         
-        awdlItem = createFeatureItem(title: "AirDrop / Handoff pausados", icon: "wifi.slash")
+        awdlItem = createFeatureItem(title: "AirDrop / Handoff paused", icon: "wifi.slash")
         menu.addItem(awdlItem)
         
-        dnsItem = createFeatureItem(title: "Cache DNS limpo e refeito", icon: "server.rack")
+        dnsItem = createFeatureItem(title: "DNS Cache flushed", icon: "server.rack")
         menu.addItem(dnsItem)
         
-        mouseItem = createFeatureItem(title: "Aceleração de Mouse desativada (Raw)", icon: "cursorarrow.motionlines")
+        mouseItem = createFeatureItem(title: "Mouse Acceleration disabled (Raw)", icon: "cursorarrow.motionlines")
         menu.addItem(mouseItem)
         
-        tmItem = createFeatureItem(title: "Time Machine pausado", icon: "clock.badge.xmark")
+        tmItem = createFeatureItem(title: "Time Machine paused", icon: "clock.badge.xmark")
         menu.addItem(tmItem)
         
-        sleepItem = createFeatureItem(title: "Prevenção de repouso ativa", icon: "sun.max.fill")
+        sleepItem = createFeatureItem(title: "Sleep prevention active", icon: "sun.max.fill")
         menu.addItem(sleepItem)
         
         menu.addItem(NSMenuItem.separator())
         
-        // 4. Encerrar
-        let quitItem = NSMenuItem(title: "Encerrar", action: #selector(quitApp), keyEquivalent: "q")
+        // 4. Quit
+        let quitItem = NSMenuItem(title: "Quit", action: #selector(quitApp), keyEquivalent: "q")
         quitItem.target = self
         quitItem.image = NSImage(systemSymbolName: "power", accessibilityDescription: nil)
         menu.addItem(quitItem)
@@ -115,11 +115,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             
             self.runPrivileged(command: sudoCommands)
             self.runUnprivileged(command: "defaults write .GlobalPreferences com.apple.mouse.scaling -1")
-            
-            // Inicia o Caffeinate para impedir o Mac de dormir durante o jogo
             self.startCaffeinate()
-            
-            // Abre o GeForce NOW automaticamente
             self.runUnprivileged(command: "open -a \"GeForce NOW\"")
             
             DispatchQueue.main.async {
@@ -141,8 +137,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             
             self.runPrivileged(command: sudoCommands)
             self.runUnprivileged(command: "defaults write .GlobalPreferences com.apple.mouse.scaling 1.5")
-            
-            // Para o processo de prevenção de repouso
             self.stopCaffeinate()
             
             DispatchQueue.main.async {
@@ -154,12 +148,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func startCaffeinate() {
-        // Garante que não tem nenhum rodando antes
         stopCaffeinate()
-        
         let process = Process()
         process.launchPath = "/usr/bin/caffeinate"
-        process.arguments = ["-d", "-i"] // -d impede a tela de apagar, -i impede o sistema de hibernar
+        process.arguments = ["-d", "-i"]
         process.launch()
         self.caffeinateProcess = process
     }
@@ -191,7 +183,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         guard let button = statusItem.button else { return }
         if isLoading {
             button.image = NSImage(systemSymbolName: "hourglass", accessibilityDescription: nil)
-            mainActionItem.title = "Processando..."
+            mainActionItem.title = "Processing..."
             mainActionItem.isEnabled = false
         } else {
             mainActionItem.isEnabled = true
@@ -205,10 +197,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             button.image = onImage
             button.contentTintColor = NSColor.systemGreen
             
-            mainActionItem.title = "Desativar GFN Booster"
+            mainActionItem.title = "Disable GFN Booster"
             mainActionItem.image = NSImage(systemSymbolName: "bolt.slash.fill", accessibilityDescription: nil)
             
-            statusTextItem.title = "Status: Otimizado para Jogos"
+            statusTextItem.title = "Status: Optimized for Gaming"
             statusTextItem.image = NSImage(systemSymbolName: "checkmark.shield.fill", accessibilityDescription: nil)
             
             optimTitle.isHidden = false
@@ -222,10 +214,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             button.image = offImage
             button.contentTintColor = nil
             
-            mainActionItem.title = "Ativar GFN Booster"
+            mainActionItem.title = "Enable GFN Booster"
             mainActionItem.image = NSImage(systemSymbolName: "bolt.fill", accessibilityDescription: nil)
             
-            statusTextItem.title = "Status: Padrão da Apple"
+            statusTextItem.title = "Status: Apple Default"
             statusTextItem.image = NSImage(systemSymbolName: "shield", accessibilityDescription: nil)
             
             optimTitle.isHidden = true
