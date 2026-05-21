@@ -52,3 +52,6 @@ cd GFNOptimizer
 
 # Build and run via Swift Package Manager
 swift run
+```
+
+![Downloads](https://img.shields.io/github/downloads/victorbrandaao/GFNOptimizer/total?style=for-the-badge&color=green)
