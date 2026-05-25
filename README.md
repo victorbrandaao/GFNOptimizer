@@ -10,7 +10,7 @@
 ## The Problem
 Mac users relying on cloud gaming often experience random micro-stutters and sudden latency spikes, even on flawless fiber connections. In the Apple ecosystem, this is primarily caused by background routines like AWDL (AirDrop/Handoff), native mouse acceleration curves, and background CPU/RAM hoarding.
 
-## How it Works (v1.1.0 Features)
+## How it Works (v1.1.1 Features)
 As an open-source project running system-level commands, transparency is key. When you click **"Enable GFN Booster"**, the app asks for Administrator privileges **only once** to execute the following optimizations:
 
 * **Clean Network:** Temporarily disables the AWDL interface (`ifconfig awdl0 down`).
@@ -28,7 +28,7 @@ Whenever you click **"Disable GFN Booster"** or simply **"Quit"** the app, it au
 
 ### Option 1: Download the App (Recommended)
 1. Go to the [Releases](../../releases) page.
-2. Download the latest `GFN_Booster_v1.1.0.dmg` file.
+2. Download the latest `GFN_Booster_v1.1.1.dmg` file.
 3. Open the `.dmg` and drag the app to your Applications folder.
 
 > **⚠️ Important: "App is damaged" error**
