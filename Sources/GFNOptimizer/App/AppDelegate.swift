@@ -8,6 +8,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         menuBuilder = MenuBuilder(statusItem: statusItem)
         menuBuilder.updateState(isActive: false)
+        
+        // Checa atualizações silenciosamente em segundo plano ao abrir
+        UpdateManager.shared.checkForUpdates(silent: true)
     }
     
     @objc func toggleBooster() {
@@ -27,6 +30,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     
     @objc func setFPSMouse() { MouseManager.apply(profile: .rawFPS) }
     @objc func setMOBAMouse() { MouseManager.apply(profile: .fastMOBA) }
+    
+    @objc func checkUpdatesManual() {
+        UpdateManager.shared.checkForUpdates(silent: false)
+    }
     
     func applicationWillTerminate(_ notification: Notification) {
         SystemManager.shared.disableGamingMode {}

@@ -6,7 +6,34 @@ class SystemManager {
     
     private init() {}
 
-    
+    func enableGamingMode(completion: @escaping () -> Void) {
+        DispatchQueue.global(qos: .userInitiated).async {
+            self.startCaffeinate()
+            
+            // 1. Abre o aplicativo corretamente via shell (Infalível pelo Bundle ID)
+            let openProcess = Process()
+            openProcess.launchPath = "/bin/sh"
+            openProcess.arguments = ["-c", "open -b com.nvidia.gfnpc.mac || open -a GeForceNOW"]
+            openProcess.launch()
+            
+            // Aguarda 4 segundos para o aplicativo carregar na tela
+            Thread.sleep(forTimeInterval: 4.0)
+            
+            // 2. Roda os comandos de baixo nível (este bloco pedirá a senha)
+            let enableScript = """
+            ifconfig awdl0 down; \
+            dscacheutil -flushcache; \
+            killall -HUP mDNSResponder; \
+            tmutil disable; \
+            purge; \
+            GFN_PID=$(pgrep -x "NVIDIA GeForce NOW" | head -n 1); \
+            if [ ! -z "$GFN_PID" ]; then renice -20 -p $GFN_PID; fi
+            """
+            
+            self.executePrivileged(enableScript)
+            DispatchQueue.main.async { completion() }
+        }
+    }
 
     func disableGamingMode(completion: @escaping () -> Void) {
         DispatchQueue.global(qos: .userInitiated).async {

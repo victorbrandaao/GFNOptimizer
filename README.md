@@ -5,6 +5,8 @@
 ![Downloads](https://img.shields.io/github/downloads/victorbrandaao/GFNOptimizer/total?style=for-the-badge&color=green)
 ![License](https://img.shields.io/badge/License-MIT-blue?style=for-the-badge)
 
+A native, open-source macOS menu bar utility built in Swift, designed to eliminate ping spikes, stuttering, and optimize your system for stable GeForce NOW cloud gaming sessions. Perfect for competitive titles where every millisecond matters, like *League of Legends*, *Warzone*, or *Battlefield 6*.
+
 ![GFN Booster in Action](assets/preview.png)
 
 ## The Problem
@@ -13,13 +15,15 @@ Mac users relying on cloud gaming often experience random micro-stutters and sud
 ## How it Works (v1.1.1 Features)
 As an open-source project running system-level commands, transparency is key. When you click **"Enable GFN Booster"**, the app asks for Administrator privileges **only once** to execute the following optimizations:
 
-* **Clean Network:** Temporarily disables the AWDL interface (`ifconfig awdl0 down`).
+* **Auto-Launch (Bundle ID Integrated):** Seamlessly launches NVIDIA GeForce NOW automatically using its native system identifier before applying system tweaks.
+* **Clean Network:** Temporarily disables the AWDL interface (`ifconfig awdl0 down`) to stop background Wi-Fi scanning.
 * **Direct Routing:** Flushes and rebuilds the system's DNS cache (`dscacheutil -flushcache`).
-* **RAM Purge:** Forces macOS to clear inactive unified memory cache, freeing up RAM for the game stream (`purge`).
-* **Max CPU Priority:** Automatically detects the GeForce NOW process and injects a maximum `-20` nice level priority, preventing background apps from stealing CPU cycles.
+* **RAM Purge:** Forces macOS to clear inactive unified memory cache, freeing up RAM for the game stream decoding (`purge`).
+* **Max CPU Priority:** Automatically detects the active game process and injects a maximum `-20` nice level priority, preventing background apps from stealing CPU cycles.
 * **Mouse Profiles:** Change mouse scaling on the fly between **FPS (Raw Input)** and **MOBA (Fast)** to bypass Apple's native acceleration curve.
 * **Bandwidth Focus:** Pauses Time Machine backups during the session (`tmutil disable`).
 * **Console Mode (Anti-Sleep):** Starts the native `caffeinate` background process to prevent the display from sleeping.
+* **Update Notification System:** Automatically queries the GitHub API on startup to notify you if a newer version is available, avoiding manual repository checking.
 
 ### Fail-Safe (Security)
 Whenever you click **"Disable GFN Booster"** or simply **"Quit"** the app, it automatically reverts absolutely every change. It restores the default mouse speed, reactivates AirDrop/Handoff, enables Time Machine, and hands power management back to macOS.
@@ -42,9 +46,6 @@ Whenever you click **"Disable GFN Booster"** or simply **"Quit"** the app, it au
 To compile and run from the source code directly via terminal:
 
 ```bash
-git clone [https://github.com/your-username/GFNOptimizer.git](https://github.com/your-username/GFNOptimizer.git)
+git clone [https://github.com/victorbrandaao/GFNOptimizer.git](https://github.com/victorbrandaao/GFNOptimizer.git)
 cd GFNOptimizer
 swift run
-```
-
-
