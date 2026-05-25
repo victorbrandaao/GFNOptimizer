@@ -4,7 +4,7 @@
             "type": "swift",
             "request": "launch",
             "args": [],
-            "cwd": "${workspaceFolder:GFNOptimizer}",
+            "cwd": "${workspaceFolder:CloudBoost}",
             "name": "Debug GFNOptimizer",
             "target": "GFNOptimizer",
             "configuration": "debug",
@@ -14,11 +14,31 @@
             "type": "swift",
             "request": "launch",
             "args": [],
-            "cwd": "${workspaceFolder:GFNOptimizer}",
+            "cwd": "${workspaceFolder:CloudBoost}",
             "name": "Release GFNOptimizer",
             "target": "GFNOptimizer",
             "configuration": "release",
             "preLaunchTask": "swift: Build Release GFNOptimizer"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:CloudBoost}",
+            "name": "Debug CloudBoost",
+            "target": "CloudBoost",
+            "configuration": "debug",
+            "preLaunchTask": "swift: Build Debug CloudBoost"
+        },
+        {
+            "type": "swift",
+            "request": "launch",
+            "args": [],
+            "cwd": "${workspaceFolder:CloudBoost}",
+            "name": "Release CloudBoost",
+            "target": "CloudBoost",
+            "configuration": "release",
+            "preLaunchTask": "swift: Build Release CloudBoost"
         }
     ]
 }

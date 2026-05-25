@@ -3,11 +3,11 @@
 <plist version="1.0">
 <dict>
     <key>CFBundleExecutable</key>
-    <string>GFNOptimizer</string>
+    <string>CloudBoost</string>
     <key>CFBundleIdentifier</key>
     <string>com.gfnbooster.app</string>
     <key>CFBundleName</key>
-    <string>GFN Booster</string>
+    <string>CloudBoost</string>
     <key>CFBundleShortVersionString</key>
     <string>1.2.0</string>
     <key>LSUIElement</key>

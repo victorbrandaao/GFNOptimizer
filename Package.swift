@@ -2,11 +2,11 @@
 import PackageDescription
 
 let package = Package(
-    name: "GFNOptimizer",
+    name: "CloudBoost",
     platforms: [
         .macOS(.v12)
     ],
     targets: [
-        .executableTarget(name: "GFNOptimizer")
+        .executableTarget(name: "CloudBoost")
     ]
 )
