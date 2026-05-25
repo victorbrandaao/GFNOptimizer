@@ -1,4 +1,6 @@
-# GFN Booster (macOS)
+
+
+# CloudBoost ☁️🚀
 
 <p align="left">
   <img src="https://img.shields.io/badge/macOS-12.0+-000000?style=for-the-badge&logo=apple&logoColor=white" alt="macOS" />
@@ -8,46 +10,46 @@
   <img src="https://img.shields.io/badge/License-MIT-blue?style=for-the-badge" alt="License" />
 </p>
 
-A native, open-source macOS menu bar utility built in Swift, designed to eliminate ping spikes, stuttering, and optimize your system for stable GeForce NOW cloud gaming sessions. Perfect for competitive titles where every millisecond matters, like *League of Legends*, *Warzone*, or *Battlefield 6*.
+**CloudBoost** is a native, open-source macOS menu bar utility written in Swift. It optimizes your operating system in real-time to eliminate micro-stutters, ping spikes, and input lag during cloud gaming sessions.
 
-## The Problem
-Mac users relying on cloud gaming often experience random micro-stutters and sudden latency spikes, even on flawless fiber connections. In the Apple ecosystem, this is primarily caused by background routines like AWDL (AirDrop/Handoff), native mouse acceleration curves, and background CPU/RAM hoarding.
+Currently supports **GeForce NOW**, **Boosteroid**, and **Xbox Cloud Gaming (xCloud)** natively.
 
-## How it Works (v1.2.0 Features)
-As an open-source project running system-level commands, transparency is key. When you click **"Enable GFN Booster"**, the app asks for Administrator privileges **only once** to execute the following optimizations:
+---
 
-* **Universal Binary (Intel & Apple Silicon):** The application is compiled for both x86_64 and arm64 architectures, running natively on any Mac without needing Rosetta translation.
-* **Auto-Launch (Bundle ID Integrated):** Seamlessly launches NVIDIA GeForce NOW automatically using its native system identifier before applying system tweaks.
-* **Clean Network:** Temporarily disables the AWDL interface (`ifconfig awdl0 down`) to stop background Wi-Fi scanning.
-* **Direct Routing:** Flushes and rebuilds the system's DNS cache (`dscacheutil -flushcache`).
-* **RAM Purge:** Forces macOS to clear inactive unified memory cache, freeing up RAM for the game stream decoding (`purge`).
-* **Max CPU Priority:** Automatically detects the active game process and injects a maximum `-20` nice level priority, preventing background apps from stealing CPU cycles.
-* **Mouse Profiles:** Change mouse scaling on the fly between **FPS (Raw Input)** and **MOBA (Fast)** to bypass Apple's native acceleration curve.
-* **Bandwidth Focus:** Pauses Time Machine backups during the session (`tmutil disable`).
-* **Console Mode (Anti-Sleep):** Starts the native `caffeinate` background process to prevent the display from sleeping.
-* **Update Notification System:** Automatically queries the GitHub API on startup to notify you if a newer version is available, avoiding manual repository checking.
+## 🔍 How it works
 
-### Fail-Safe (Security)
-Whenever you click **"Disable GFN Booster"** or simply **"Quit"** the app, it automatically reverts absolutely every change. It restores the default mouse speed, reactivates AirDrop/Handoff, enables Time Machine, and hands power management back to macOS.
+macOS runs several background processes that compromise high-refresh-rate, low-latency video streams. When you enable CloudBoost, the app asks for Administrator privileges (just once per session) and automates the following tweaks:
 
-## Installation
+* **Kills Ping Spikes (AWDL Off):** Temporarily disables the `awdl0` network interface (used for AirDrop and Handoff). This stops the constant background Wi-Fi scanning, which is the main culprit behind sudden ping drops.
+* **Max CPU Priority (`renice`):** Identifies the process of your chosen platform (or your default browser for xCloud) and forces a maximum `-20` nice level priority, preventing background apps from stealing your CPU cycles and causing stream stutters.
+* **Custom Mouse Profiles:** Lets you toggle between **FPS (Raw Input)** and **MOBA (Fast)** profiles directly from the menu bar, completely bypassing Apple's floaty native mouse acceleration curve.
+* **RAM Purge & DNS Flush:** Flushes your DNS cache to ensure direct routing and forces a purge of inactive unified memory, freeing up physical RAM for the stream decoder.
+* **Bandwidth & Power Focus:** Temporarily pauses Time Machine backups and triggers the native `caffeinate` command so your Mac doesn't throttle clock speeds or put the display to sleep mid-match.
 
-### Option 1: Download the App (Recommended)
-1. Go to the [Releases](../../releases) page.
-2. Download the latest `GFN_Booster_v1.2.0.dmg` file.
-3. Open the `.dmg` and drag the app to your Applications folder.
+**The Fail-Safe:** The moment you click "Disable CloudBoost" or quit the app, absolutely everything is instantly reverted to your system's default state.
 
-> **⚠️ Important: "App is damaged" error**
-> Since this app is open-source and isn't signed with a paid Apple Developer certificate, macOS Gatekeeper tags it with quarantine attributes when downloaded via a browser. If you get an error saying the app is damaged and should be moved to the Trash, simply open your **Terminal** and run this command to clear the quarantine flag:
+---
+
+## 💻 Compatibility
+
+* **Universal Binary:** Compiled natively for both **Apple Silicon (M-Series)** and older **Intel Macs**. It runs on bare metal with zero Rosetta translation overhead.
+* **Auto-Updater:** The app silently checks the GitHub API on startup and will prompt you natively when a new version is available.
+
+---
+
+## 📥 Installation
+
+1. Go to the [Releases](https://github.com/victorbrandaao/CloudBoost/releases) tab and download the latest `.dmg` file.
+2. Open the `.dmg` and drag **CloudBoost.app** to your `/Applications` folder.
+
+> **⚠️ Important note on macOS Gatekeeper:**
+> Because this is an independent open-source tool and I don't pay for an Apple Developer Signature, macOS Gatekeeper will likely throw an "App is damaged" error when you try to open it. To clear the quarantine flag, simply open your Terminal and run:
 > ```bash
-> xattr -cr /Applications/"GFN Booster.app"
+> xattr -cr /Applications/"CloudBoost.app"
 > ```
-> After that, you can open the app normally!
 
-### Option 2: Build from Source
-To compile and run from the source code directly via terminal:
+---
 
-```bash
-git clone [https://github.com/victorbrandaao/GFNOptimizer.git](https://github.com/victorbrandaao/GFNOptimizer.git)
-cd GFNOptimizer
-swift run
+## 🛠️ Contributing
+
+Contributions, bug reports, and feature requests are always welcome. Feel free to open an Issue or submit a Pull Request to the `develop` branch.
