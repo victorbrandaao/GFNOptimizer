@@ -1,9 +1,6 @@
 # GFN Booster (macOS)
 
-![macOS](https://img.shields.io/badge/macOS-12.0+-000000?style=for-the-badge&logo=apple&logoColor=white)
-![Swift](https://img.shields.io/badge/Swift-5.9+-FA7343?style=for-the-badge&logo=swift&logoColor=white)
-![Downloads](https://img.shields.io/github/downloads/victorbrandaao/GFNOptimizer/total?style=for-the-badge&color=green)
-![License](https://img.shields.io/badge/License-MIT-blue?style=for-the-badge)
+![macOS](https://img.shields.io/badge/macOS-12.0+-000000?style=for-the-badge&logo=apple&logoColor=white) ![Swift](https://img.shields.io/badge/Swift-5.9+-FA7343?style=for-the-badge&logo=swift&logoColor=white) ![Downloads](https://img.shields.io/github/downloads/victorbrandaao/GFNOptimizer/total?style=for-the-badge&color=green) ![License](https://img.shields.io/badge/License-MIT-blue?style=for-the-badge)
 
 A native, open-source macOS menu bar utility built in Swift, designed to eliminate ping spikes, stuttering, and optimize your system for stable GeForce NOW cloud gaming sessions. Perfect for competitive titles where every millisecond matters, like *League of Legends*, *Warzone*, or *Battlefield 6*.
 
