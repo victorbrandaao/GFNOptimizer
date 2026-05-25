@@ -23,7 +23,7 @@ class UpdateManager {
                    let htmlUrl = json["html_url"] as? String {
                     
                     let latestVersion = tagName.replacingOccurrences(of: "v", with: "")
-                    let currentVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.1.1"
+                    let currentVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.2.0"
                     
                     if latestVersion.compare(currentVersion, options: .numeric) == .orderedDescending {
                         DispatchQueue.main.async {
