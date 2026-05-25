@@ -9,22 +9,27 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         menuBuilder = MenuBuilder(statusItem: statusItem)
         menuBuilder.updateState(isActive: false)
         
-        // Checa atualizações silenciosamente em segundo plano ao abrir
         UpdateManager.shared.checkForUpdates(silent: true)
     }
     
     @objc func toggleBooster() {
         menuBuilder.setLoading()
         
-        if let button = statusItem.button, button.contentTintColor == .systemGreen {
+        if menuBuilder.isBoosterActive {
             SystemManager.shared.disableGamingMode {
                 self.menuBuilder.updateState(isActive: false)
             }
         } else {
             SystemManager.shared.enableGamingMode {
-                MouseManager.apply(profile: .rawFPS) // Default to FPS when activated
+                MouseManager.apply(profile: .rawFPS)
                 self.menuBuilder.updateState(isActive: true)
             }
+        }
+    }
+    
+    @objc func setPlatform(_ sender: NSMenuItem) {
+        if let platform = sender.representedObject as? CloudPlatform {
+            menuBuilder.changePlatform(platform)
         }
     }
     
