@@ -1,18 +1,26 @@
-
-
 # CloudBoost ☁️🚀
 
 <p align="left">
   <img src="https://img.shields.io/badge/macOS-12.0+-000000?style=for-the-badge&logo=apple&logoColor=white" alt="macOS" />
   <img src="https://img.shields.io/badge/Architecture-Universal_Binary-8A2BE2?style=for-the-badge" alt="Universal Binary" />
   <img src="https://img.shields.io/badge/Swift-5.9+-FA7343?style=for-the-badge&logo=swift&logoColor=white" alt="Swift" />
-  <img src="https://img.shields.io/github/downloads/victorbrandaao/GFNOptimizer/total?style=for-the-badge&color=2ea44f&logo=github&v=3" alt="Downloads" />
+  <img src="https://img.shields.io/github/downloads/victorbrandaao/CloudBoost/total?style=for-the-badge&color=2ea44f&logo=github&v=3" alt="Downloads" />
   <img src="https://img.shields.io/badge/License-MIT-blue?style=for-the-badge" alt="License" />
 </p>
 
 **CloudBoost** is a native, open-source macOS menu bar utility written in Swift. It optimizes your operating system in real-time to eliminate micro-stutters, ping spikes, and input lag during cloud gaming sessions.
 
 Currently supports **GeForce NOW**, **Boosteroid**, and **Xbox Cloud Gaming (xCloud)** natively.
+
+<br>
+
+<p align="center">
+  <img src="assets/img1.png" width="400" alt="CloudBoost Default Menu">
+  &nbsp;&nbsp;&nbsp;&nbsp;
+  <img src="assets/img2.png" width="400" alt="CloudBoost Active Target Platform">
+</p>
+
+<br>
 
 ---
 
@@ -42,14 +50,4 @@ macOS runs several background processes that compromise high-refresh-rate, low-l
 1. Go to the [Releases](https://github.com/victorbrandaao/CloudBoost/releases) tab and download the latest `.dmg` file.
 2. Open the `.dmg` and drag **CloudBoost.app** to your `/Applications` folder.
 
-> **⚠️ Important note on macOS Gatekeeper:**
-> Because this is an independent open-source tool and I don't pay for an Apple Developer Signature, macOS Gatekeeper will likely throw an "App is damaged" error when you try to open it. To clear the quarantine flag, simply open your Terminal and run:
-> ```bash
-> xattr -cr /Applications/"CloudBoost.app"
-> ```
-
----
-
-## 🛠️ Contributing
-
-Contributions, bug reports, and feature requests are always welcome. Feel free to open an Issue or submit a Pull Request to the `develop` branch.
+> **⚠️
