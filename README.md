@@ -95,10 +95,12 @@ SIGN_IDENTITY="Developer ID Application: Your Name (TEAMID)" scripts/release.sh 
 
 ## 💖 Support the Project
 
-CloudBoost is a free, open-source tool built to solve a problem I faced as a gamer. If this utility has helped you eliminate stutters or improved your gaming experience, please consider **[sponsoring me](https://github.com/sponsors/victorbrandaao)**.
+CloudBoost is free and open source. If it improved your cloud gaming experience on macOS, please consider **[sponsoring the project](https://github.com/sponsors/victorbrandaao)**.
 
-**Sponsorships directly fund maintenance, bug fixes, and new features.**
+Your sponsorship directly helps fund:
 
-If you want to help keep CloudBoost stable and improving, please consider sponsoring.
+* Ongoing maintenance and compatibility fixes.
+* Faster bug triage and issue resolution.
+* New platform integrations and requested features.
 
-Your support helps me cover development costs, dedicate more time to fixing bugs, and keep the project open-source and free for everyone.
+Every contribution helps keep CloudBoost stable, actively maintained, and free for everyone.
