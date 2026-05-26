@@ -16,7 +16,8 @@ Currently supports **GeForce NOW**, **Boosteroid**, and **Xbox Cloud Gaming (xCl
 
 <p align="center">
   <img src="assets/img1.png" width="400" alt="CloudBoost Default Menu">
-  &nbsp;&nbsp;&nbsp;&nbsp;>
+  &nbsp;&nbsp;&nbsp;&nbsp;
+  <img src="assets/img2.png" width="400" alt="CloudBoost Feature Screenshot">
 </p>
 
 <br>
@@ -55,9 +56,9 @@ macOS runs several background processes that compromise high-refresh-rate, low-l
 > xattr -cr /Applications/"CloudBoost.app"
 > ```
 
-## ✅ Current Stable Build (v1.3.4)
+## 🧪 Current Beta Build (v1.2.0-beta)
 
-This is the current stability test build and will remain the primary release for a few days while users validate it.
+This is the current beta build and will remain the primary release for a few days while users validate it.
 
 What’s new:
 
@@ -68,13 +69,14 @@ What’s new:
 * Allowlist/Blocklist for renice targeting.
 * Diagnostics export + status notifications.
 
+
 ## 🛠️ Maintainer Release Flow
 
 To avoid shipping stale bundles (wrong version/signature metadata), always generate releases from source using the release script:
 
 ```bash
 chmod +x scripts/release.sh
-scripts/release.sh 1.3.4
+scripts/release.sh 1.2.0-beta
 ```
 
 This script:
@@ -87,7 +89,7 @@ This script:
 If you have a Developer ID certificate, you can sign with it:
 
 ```bash
-SIGN_IDENTITY="Developer ID Application: Your Name (TEAMID)" scripts/release.sh 1.3.4
+SIGN_IDENTITY="Developer ID Application: Your Name (TEAMID)" scripts/release.sh 1.2.0-beta
 ```
 
 ---

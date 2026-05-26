@@ -38,6 +38,8 @@ final class DiagnosticsManager {
         lines.append("Auto-detect: \(Preferences.autoDetectEnabled)")
         lines.append("HUD: \(Preferences.hudEnabled)")
         lines.append("Notifications: \(Preferences.notificationsEnabled)")
+        lines.append("Keep-alive: \(Preferences.keepAliveEnabled)")
+        lines.append("Keep-alive interval (min): \(Preferences.keepAliveIntervalMinutes)")
         lines.append("Allowlist: \(Preferences.allowlist.joined(separator: ", "))")
         lines.append("Blocklist: \(Preferences.blocklist.joined(separator: ", "))")
         lines.append("\nRecent Events:")

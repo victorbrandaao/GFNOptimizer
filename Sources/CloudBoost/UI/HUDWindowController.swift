@@ -2,49 +2,66 @@ import AppKit
 
 final class HUDWindowController: NSWindowController {
     private let statusLabel = NSTextField(labelWithString: "CloudBoost HUD")
-    private let detailsLabel = NSTextField(labelWithString: "")
     private var timer: Timer?
 
     override init(window: NSWindow?) {
-        let panel = NSPanel(contentRect: NSRect(x: 0, y: 0, width: 360, height: 160),
-                            styleMask: [.titled, .utilityWindow, .nonactivatingPanel],
-                            backing: .buffered,
-                            defer: false)
-        panel.title = "CloudBoost HUD"
+        let panel = NSPanel(
+            contentRect: NSRect(x: 0, y: 0, width: 320, height: 20),
+            styleMask: [.borderless, .nonactivatingPanel],
+            backing: .buffered,
+            defer: false
+        )
         panel.isFloatingPanel = true
-        panel.level = .floating
+        panel.level = .statusBar
         panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
+        panel.isOpaque = false
+        panel.backgroundColor = .clear
+        panel.hasShadow = false
+        panel.ignoresMouseEvents = true
         super.init(window: panel)
 
         let contentView = NSView(frame: panel.contentRect(forFrameRect: panel.frame))
         panel.contentView = contentView
 
-        statusLabel.frame = NSRect(x: 16, y: 110, width: 328, height: 20)
-        detailsLabel.frame = NSRect(x: 16, y: 20, width: 328, height: 80)
-        detailsLabel.maximumNumberOfLines = 4
-
+        statusLabel.frame = NSRect(x: 6, y: 3, width: 308, height: 14)
+        statusLabel.font = NSFont.monospacedDigitSystemFont(ofSize: 10, weight: .regular)
+        statusLabel.textColor = .white
+        statusLabel.lineBreakMode = .byTruncatingTail
+        let shadow = NSShadow()
+        shadow.shadowColor = NSColor.black.withAlphaComponent(0.5)
+        shadow.shadowBlurRadius = 1.5
+        shadow.shadowOffset = NSSize(width: 0, height: -1)
+        statusLabel.shadow = shadow
         contentView.addSubview(statusLabel)
-        contentView.addSubview(detailsLabel)
+
+        positionPanel(panel)
     }
 
     required init?(coder: NSCoder) {
         return nil
     }
 
-    func startUpdating(statusProvider: @escaping () -> (String, String)) {
+    func startUpdating(interval: TimeInterval = 2.0, statusProvider: @escaping () -> String) {
         timer?.invalidate()
-        timer = Timer.scheduledTimer(withTimeInterval: 5.0, repeats: true) { _ in
-            let result = statusProvider()
-            self.statusLabel.stringValue = result.0
-            self.detailsLabel.stringValue = result.1
+        timer = Timer.scheduledTimer(withTimeInterval: interval, repeats: true) { _ in
+            self.statusLabel.stringValue = statusProvider()
         }
-        let result = statusProvider()
-        statusLabel.stringValue = result.0
-        detailsLabel.stringValue = result.1
+        statusLabel.stringValue = statusProvider()
     }
 
     func stopUpdating() {
         timer?.invalidate()
         timer = nil
+    }
+
+    private func positionPanel(_ panel: NSPanel) {
+        guard let screenFrame = NSScreen.main?.visibleFrame else { return }
+        let x = screenFrame.maxX - panel.frame.width - 16
+        let y = screenFrame.maxY - panel.frame.height - 16
+        panel.setFrameOrigin(NSPoint(x: x, y: y))
+    }
+
+    deinit {
+        stopUpdating()
     }
 }

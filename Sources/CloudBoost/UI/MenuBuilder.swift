@@ -16,7 +16,6 @@ class MenuBuilder: NSObject {
     init(statusItem: NSStatusItem) {
         self.statusItem = statusItem
         super.init()
-        
         // Recupera a última plataforma selecionada pelo utilizador
         if let savedStr = UserDefaults.standard.string(forKey: "SelectedPlatform"),
            let platform = CloudPlatform(rawValue: savedStr) {
@@ -113,67 +112,78 @@ class MenuBuilder: NSObject {
                 button.image = nil
                 button.title = "CB"
             }
+            button.target = nil
+            button.action = nil
         }
         
-        // 1. Plataformas
-        menu.addItem(NSMenuItem(title: "Select Platform:", action: nil, keyEquivalent: ""))
+        // 1. Status + Action
+        let statusText = "Status: \(isBoosterActive ? "Boost ON" : "Boost OFF") | HUD \(Preferences.hudEnabled ? "ON" : "OFF") | Keep Alive \(Preferences.keepAliveEnabled ? "ON" : "OFF")"
+        let statusRow = NSMenuItem(title: statusText, action: nil, keyEquivalent: "")
+        statusRow.isEnabled = false
+        menu.addItem(statusRow)
+
+        let boosterTitle = isBoosterActive ? "Disable CloudBoost" : "Enable CloudBoost"
+        let boosterActionItem = NSMenuItem(title: boosterTitle, action: #selector(AppDelegate.toggleBooster), keyEquivalent: "b")
+        boosterActionItem.image = menuIcon(name: isBoosterActive ? "stop.circle.fill" : "bolt.circle.fill")
+        boosterActionItem.target = NSApp.delegate
+        menu.addItem(boosterActionItem)
+
+        let keepAliveItem = NSMenuItem(title: "Keep Alive", action: #selector(toggleKeepAlive(_:)), keyEquivalent: "")
+        keepAliveItem.image = menuIcon(name: "timer")
+        keepAliveItem.target = self
+        keepAliveItem.state = Preferences.keepAliveEnabled ? .on : .off
+        menu.addItem(keepAliveItem)
+
+        menu.addItem(NSMenuItem.separator())
+
+        // 2. Platform
+        menu.addItem(NSMenuItem(title: "Platform:", action: nil, keyEquivalent: ""))
         
-        let gfnItem = NSMenuItem(title: "GeForce NOW", action: Selector(("setPlatform:")), keyEquivalent: "")
+        let gfnItem = NSMenuItem(title: "GeForce NOW", action: #selector(AppDelegate.setPlatform(_:)), keyEquivalent: "")
         gfnItem.image = menuIcon(name: "cloud.fill")
         gfnItem.target = NSApp.delegate // Aponta de volta para o AppDelegate
         gfnItem.representedObject = CloudPlatform.geforceNow
         gfnItem.state = (selectedPlatform == .geforceNow) ? .on : .off
         menu.addItem(gfnItem)
         
-        let boosteroidItem = NSMenuItem(title: "Boosteroid", action: Selector(("setPlatform:")), keyEquivalent: "")
+        let boosteroidItem = NSMenuItem(title: "Boosteroid", action: #selector(AppDelegate.setPlatform(_:)), keyEquivalent: "")
         boosteroidItem.image = menuIcon(name: "speedometer")
         boosteroidItem.target = NSApp.delegate
         boosteroidItem.representedObject = CloudPlatform.boosteroid
         boosteroidItem.state = (selectedPlatform == .boosteroid) ? .on : .off
         menu.addItem(boosteroidItem)
         
-        let xcloudItem = NSMenuItem(title: "Xbox Cloud Gaming (xCloud)", action: Selector(("setPlatform:")), keyEquivalent: "")
+        let xcloudItem = NSMenuItem(title: "Xbox Cloud Gaming (xCloud)", action: #selector(AppDelegate.setPlatform(_:)), keyEquivalent: "")
         xcloudItem.image = menuIcon(name: "gamecontroller")
         xcloudItem.target = NSApp.delegate
         xcloudItem.representedObject = CloudPlatform.xcloud
         xcloudItem.state = (selectedPlatform == .xcloud) ? .on : .off
         menu.addItem(xcloudItem)
 
-        let moonlightItem = NSMenuItem(title: "Moonlight", action: Selector(("setPlatform:")), keyEquivalent: "")
+        let moonlightItem = NSMenuItem(title: "Moonlight", action: #selector(AppDelegate.setPlatform(_:)), keyEquivalent: "")
         moonlightItem.image = menuIcon(name: "moon.stars.fill")
         moonlightItem.target = NSApp.delegate
         moonlightItem.representedObject = CloudPlatform.moonlight
         moonlightItem.state = (selectedPlatform == .moonlight) ? .on : .off
         menu.addItem(moonlightItem)
 
-        let voidlinkItem = NSMenuItem(title: "VoidLink Extreme", action: Selector(("setPlatform:")), keyEquivalent: "")
+        let voidlinkItem = NSMenuItem(title: "VoidLink Extreme", action: #selector(AppDelegate.setPlatform(_:)), keyEquivalent: "")
         voidlinkItem.image = menuIcon(name: "bolt.horizontal.circle.fill")
         voidlinkItem.target = NSApp.delegate
         voidlinkItem.representedObject = CloudPlatform.voidlink
         voidlinkItem.state = (selectedPlatform == .voidlink) ? .on : .off
         menu.addItem(voidlinkItem)
+
+        let openPlatformItem = NSMenuItem(title: "Open platform", action: #selector(AppDelegate.openSelectedPlatform), keyEquivalent: "o")
+        openPlatformItem.image = menuIcon(name: "arrow.up.right.square")
+        openPlatformItem.target = NSApp.delegate
+        menu.addItem(openPlatformItem)
         
         menu.addItem(NSMenuItem.separator())
         
-        // 2. Opções Avançadas (Navegador)
-        menu.addItem(NSMenuItem(title: "Options:", action: nil, keyEquivalent: ""))
-        
-        let boosteroidToggle = NSMenuItem(title: "Launch Boosteroid in Browser", action: #selector(toggleBoosteroidBrowser(_:)), keyEquivalent: "")
-        boosteroidToggle.image = menuIcon(name: "safari")
-        boosteroidToggle.target = self // Resolvido aqui dentro
-        let isBrowserEnabled = UserDefaults.standard.bool(forKey: "BoosteroidUseBrowser")
-        boosteroidToggle.state = isBrowserEnabled ? .on : .off
-        menu.addItem(boosteroidToggle)
-        
-        let currentBrowserName = MenuBuilder.getDefaultBrowserProcessName()
-        let browserInfoItem = NSMenuItem(title: "Default Browser: \(currentBrowserName)", action: nil, keyEquivalent: "")
-        browserInfoItem.isEnabled = false
-        menu.addItem(browserInfoItem)
+        // 3. Preset
+        menu.addItem(NSMenuItem(title: "Preset:", action: nil, keyEquivalent: ""))
 
-        menu.addItem(NSMenuItem.separator())
-
-        // 3. Performance
-        menu.addItem(NSMenuItem(title: "Performance Preset:", action: nil, keyEquivalent: ""))
         for preset in PresetName.allCases {
             let item = NSMenuItem(title: preset.rawValue, action: #selector(selectPreset(_:)), keyEquivalent: "")
             item.image = menuIcon(name: "slider.horizontal.3")
@@ -183,19 +193,22 @@ class MenuBuilder: NSObject {
             menu.addItem(item)
         }
 
-        let autoDetectItem = NSMenuItem(title: "Auto-Detect Active Platform", action: #selector(toggleAutoDetect(_:)), keyEquivalent: "")
+        menu.addItem(NSMenuItem.separator())
+
+        // 4. Toggles
+        let autoDetectItem = NSMenuItem(title: "Auto-Detect", action: #selector(toggleAutoDetect(_:)), keyEquivalent: "")
         autoDetectItem.image = menuIcon(name: "wand.and.stars")
         autoDetectItem.target = self
         autoDetectItem.state = Preferences.autoDetectEnabled ? .on : .off
         menu.addItem(autoDetectItem)
 
-        let hudItem = NSMenuItem(title: "Performance HUD", action: #selector(toggleHud(_:)), keyEquivalent: "")
+        let hudItem = NSMenuItem(title: "HUD", action: #selector(toggleHud(_:)), keyEquivalent: "")
         hudItem.image = menuIcon(name: "gauge")
         hudItem.target = self
         hudItem.state = Preferences.hudEnabled ? .on : .off
         menu.addItem(hudItem)
 
-        let notificationsItem = NSMenuItem(title: "Status Notifications", action: #selector(toggleNotifications(_:)), keyEquivalent: "")
+        let notificationsItem = NSMenuItem(title: "Notifications", action: #selector(toggleNotifications(_:)), keyEquivalent: "")
         notificationsItem.image = menuIcon(name: "bell.badge.fill")
         notificationsItem.target = self
         notificationsItem.state = Preferences.notificationsEnabled ? .on : .off
@@ -203,13 +216,30 @@ class MenuBuilder: NSObject {
 
         menu.addItem(NSMenuItem.separator())
 
-        // 4. Diagnostics
-        let allowlistItem = NSMenuItem(title: "Edit Allowlist...", action: #selector(editAllowlist), keyEquivalent: "")
+        // 5. Advanced
+        menu.addItem(NSMenuItem(title: "Advanced:", action: nil, keyEquivalent: ""))
+
+        let boosteroidToggle = NSMenuItem(title: "Boosteroid via Browser", action: #selector(toggleBoosteroidBrowser(_:)), keyEquivalent: "")
+        boosteroidToggle.image = menuIcon(name: "safari")
+        boosteroidToggle.target = self
+        let isBrowserEnabled = UserDefaults.standard.bool(forKey: "BoosteroidUseBrowser")
+        boosteroidToggle.state = isBrowserEnabled ? .on : .off
+        menu.addItem(boosteroidToggle)
+
+        let currentBrowserName = MenuBuilder.getDefaultBrowserProcessName()
+        let browserInfoItem = NSMenuItem(title: "Browser: \(currentBrowserName)", action: nil, keyEquivalent: "")
+        browserInfoItem.isEnabled = false
+        menu.addItem(browserInfoItem)
+
+        menu.addItem(NSMenuItem.separator())
+
+        // 6. Diagnostics
+        let allowlistItem = NSMenuItem(title: "Allowlist...", action: #selector(editAllowlist), keyEquivalent: "")
         allowlistItem.image = menuIcon(name: "checkmark.seal")
         allowlistItem.target = self
         menu.addItem(allowlistItem)
 
-        let blocklistItem = NSMenuItem(title: "Edit Blocklist...", action: #selector(editBlocklist), keyEquivalent: "")
+        let blocklistItem = NSMenuItem(title: "Blocklist...", action: #selector(editBlocklist), keyEquivalent: "")
         blocklistItem.image = menuIcon(name: "xmark.seal")
         blocklistItem.target = self
         menu.addItem(blocklistItem)
@@ -220,20 +250,11 @@ class MenuBuilder: NSObject {
         menu.addItem(exportLogsItem)
         
         menu.addItem(NSMenuItem.separator())
-        
-        // 5. Controlo do Booster
-        let boosterTitle = isBoosterActive ? "Disable CloudBoost" : "Enable CloudBoost"
-        let boosterActionItem = NSMenuItem(title: boosterTitle, action: Selector(("toggleBooster")), keyEquivalent: "b")
-        boosterActionItem.image = menuIcon(name: isBoosterActive ? "stop.circle.fill" : "bolt.circle.fill")
-        boosterActionItem.target = NSApp.delegate // Aponta de volta para o AppDelegate
-        menu.addItem(boosterActionItem)
-        
-        menu.addItem(NSMenuItem.separator())
         let quitItem = NSMenuItem(title: "Quit CloudBoost", action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
         quitItem.image = menuIcon(name: "power")
         menu.addItem(quitItem)
         
-        statusItem.menu = menu
+        self.statusItem.menu = menu
     }
     
     @objc func toggleBoosteroidBrowser(_ sender: NSMenuItem) {
@@ -267,6 +288,13 @@ class MenuBuilder: NSObject {
         Preferences.notificationsEnabled.toggle()
         NotificationManager.shared.requestIfNeeded()
         DiagnosticsManager.shared.log("Notifications toggled: \(Preferences.notificationsEnabled)")
+        rebuildMenu()
+    }
+
+    @objc private func toggleKeepAlive(_ sender: NSMenuItem) {
+        Preferences.keepAliveEnabled.toggle()
+        NotificationCenter.default.post(name: .keepAliveToggle, object: nil)
+        DiagnosticsManager.shared.log("Keep-alive toggled: \(Preferences.keepAliveEnabled)")
         rebuildMenu()
     }
 

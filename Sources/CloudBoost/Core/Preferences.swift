@@ -22,6 +22,8 @@ struct Preferences {
         static let autoDetectEnabled = "AutoDetectEnabled"
         static let notificationsEnabled = "NotificationsEnabled"
         static let hudEnabled = "HudEnabled"
+        static let keepAliveEnabled = "KeepAliveEnabled"
+        static let keepAliveIntervalMinutes = "KeepAliveIntervalMinutes"
         static let selectedPreset = "SelectedPreset"
         static let allowlist = "ProcessAllowlist"
         static let blocklist = "ProcessBlocklist"
@@ -42,6 +44,16 @@ struct Preferences {
     static var hudEnabled: Bool {
         get { defaults.object(forKey: Keys.hudEnabled) as? Bool ?? false }
         set { defaults.set(newValue, forKey: Keys.hudEnabled) }
+    }
+
+    static var keepAliveEnabled: Bool {
+        get { defaults.object(forKey: Keys.keepAliveEnabled) as? Bool ?? false }
+        set { defaults.set(newValue, forKey: Keys.keepAliveEnabled) }
+    }
+
+    static var keepAliveIntervalMinutes: Int {
+        get { defaults.object(forKey: Keys.keepAliveIntervalMinutes) as? Int ?? 4 }
+        set { defaults.set(newValue, forKey: Keys.keepAliveIntervalMinutes) }
     }
 
     static var selectedPreset: PresetName {

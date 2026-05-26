@@ -56,11 +56,17 @@ class UpdateManager {
         alert.informativeText = "A new version of CloudBoost (v\(latestVersion)) is available. You are currently running v\(currentVersion).\n\nWould you like to download it?"
         alert.alertStyle = .informational
         alert.addButton(withTitle: "Download")
+        alert.addButton(withTitle: "Release Notes")
         alert.addButton(withTitle: "Cancel")
         
-        if alert.runModal() == .alertFirstButtonReturn {
+        let response = alert.runModal()
+        if response == .alertFirstButtonReturn {
             if let downloadURL = URL(string: url) {
                 NSWorkspace.shared.open(downloadURL)
+            }
+        } else if response == .alertSecondButtonReturn {
+            if let notesURL = URL(string: url) {
+                NSWorkspace.shared.open(notesURL)
             }
         }
     }

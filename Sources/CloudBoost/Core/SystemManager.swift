@@ -6,10 +6,10 @@ class SystemManager {
     
     private init() {}
 
-    func enableGamingMode(processNames: [String], openBundleId: String?, completion: @escaping () -> Void) {
+    func enableGamingMode(processNames: [String], openBundleId: String?, completion: @escaping (Bool) -> Void) {
         DispatchQueue.global(qos: .userInitiated).async {
+            let preset = Preferences.presetConfig()
             self.captureSnapshotIfNeeded()
-            self.startCaffeinate()
             
             // 1. Abre o aplicativo via Bundle ID, se conhecido
             if let bundleId = openBundleId, !bundleId.isEmpty {
@@ -22,28 +22,32 @@ class SystemManager {
             // Aguarda 4 segundos para o aplicativo carregar na tela
             Thread.sleep(forTimeInterval: 4.0)
 
-                        let filteredNames = self.filterProcessNames(processNames)
-                        let escapedNames = filteredNames.map { "\"\(self.shellEscape($0))\"" }.joined(separator: " ")
-                        let preset = Preferences.presetConfig()
-                        let awdlCommand = preset.disableAwdl ? "ifconfig awdl0 down" : "true"
-                        let dnsCommand = preset.flushDns ? "dscacheutil -flushcache; killall -HUP mDNSResponder" : "true"
-                        let tmCommand = preset.disableTimeMachine ? "tmutil disable" : "true"
-                        let purgeCommand = preset.purgeMemory ? "purge" : "true"
+            let filteredNames = self.filterProcessNames(processNames)
+            let escapedNames = filteredNames.map { "\"\(self.shellEscape($0))\"" }.joined(separator: " ")
+            let awdlCommand = preset.disableAwdl ? "ifconfig awdl0 down" : "true"
+            let dnsCommand = preset.flushDns ? "dscacheutil -flushcache; killall -HUP mDNSResponder" : "true"
+            let tmCommand = preset.disableTimeMachine ? "tmutil disable" : "true"
+            let purgeCommand = preset.purgeMemory ? "command -v purge >/dev/null && purge || true" : "true"
+            let reniceCommand = filteredNames.isEmpty ? "true" : "for name in \(escapedNames); do PID=$(pgrep -x \"$name\" | head -n 1); if [ -n \"$PID\" ]; then renice -20 -p \"$PID\"; fi; done"
 
             let enableScript = """
-                        \(awdlCommand); \
-                        \(dnsCommand); \
-                        \(tmCommand); \
-                        \(purgeCommand); \
-                        for name in \(escapedNames); do \
-                            PID=$(pgrep -x "$name" | head -n 1); \
-                            if [ -n "$PID" ]; then renice -20 -p "$PID"; fi; \
-                        done
+            \(awdlCommand); \
+            \(dnsCommand); \
+            \(tmCommand); \
+            \(purgeCommand); \
+            \(reniceCommand)
             """
             
-            self.executePrivileged(enableScript)
-                        Preferences.lastBoostActive = true
-            DispatchQueue.main.async { completion() }
+            let success = self.executePrivileged(enableScript)
+            Preferences.lastBoostActive = success
+            if success {
+                if preset.keepAwake {
+                    self.startCaffeinate()
+                }
+            } else {
+                self.stopCaffeinate()
+            }
+            DispatchQueue.main.async { completion(success) }
         }
     }
 
@@ -83,12 +87,14 @@ class SystemManager {
         }
     }
 
-    private func executePrivileged(_ command: String) {
+    private func executePrivileged(_ command: String) -> Bool {
         let script = "do shell script \"\(command)\" with administrator privileges"
         var error: NSDictionary?
         if let appleScript = NSAppleScript(source: script) {
             appleScript.executeAndReturnError(&error)
+            return error == nil
         }
+        return false
     }
 
     private func captureSnapshotIfNeeded() {
@@ -111,8 +117,11 @@ class SystemManager {
         let tmCommand = state.timeMachineEnabled ? "tmutil enable" : "tmutil disable"
         let mouseCommand = "defaults write -g com.apple.mouse.scaling \(state.mouseScaling)"
         let script = "\(awdlCommand); \(tmCommand); \(mouseCommand)"
-        executePrivileged(script)
-        Preferences.lastSnapshot = nil
+        if executePrivileged(script) {
+            Preferences.lastSnapshot = nil
+        } else {
+            DiagnosticsManager.shared.log("Safe restore failed")
+        }
     }
 
     private func filterProcessNames(_ names: [String]) -> [String] {
@@ -143,9 +152,14 @@ class SystemManager {
 
     func firstMatchingPid(_ names: [String]) -> String? {
         for name in names {
-            let pid = runShell("pgrep -x \"\(shellEscape(name))\" | head -n 1")
-            if !pid.isEmpty {
-                return pid
+            let escaped = shellEscape(name)
+            let exactPid = runShell("pgrep -x \"\(escaped)\" | head -n 1")
+            if !exactPid.isEmpty {
+                return exactPid
+            }
+            let fuzzyPid = runShell("pgrep -f \"\(escaped)\" | head -n 1")
+            if !fuzzyPid.isEmpty {
+                return fuzzyPid
             }
         }
         return nil
@@ -160,9 +174,15 @@ class SystemManager {
     }
 
     func pingStats() -> String {
-        let output = runShell("ping -c 3 -q 1.1.1.1 | tail -1")
-        if let range = output.range(of: "=") {
-            return output[range.upperBound...].trimmingCharacters(in: .whitespaces)
+        let output = runShell("ping -c 1 -W 1000 1.1.1.1")
+        if let range = output.range(of: "time=") {
+            let after = output[range.upperBound...]
+            if let end = after.range(of: " ms") {
+                let value = after[..<end.lowerBound].trimmingCharacters(in: .whitespaces)
+                if !value.isEmpty {
+                    return "\(value)ms"
+                }
+            }
         }
         return "n/a"
     }

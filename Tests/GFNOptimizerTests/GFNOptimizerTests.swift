@@ -1,8 +1,7 @@
 import Testing
-@testable import GFNOptimizer
+@testable import CloudBoost
 
-@Test func example() async throws {
-    // Write your test here and use APIs like `#expect(...)` to check expected conditions.
-    // Swift Testing Documentation
-    // https://developer.apple.com/documentation/testing
+@Test func presetDefaultsAreStable() async throws {
+    let preset = Preferences.presetConfig()
+    #expect(preset.name == .competitive)
 }
