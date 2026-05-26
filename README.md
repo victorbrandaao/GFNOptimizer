@@ -62,7 +62,7 @@ To avoid shipping stale bundles (wrong version/signature metadata), always gener
 
 ```bash
 chmod +x scripts/release.sh
-scripts/release.sh 1.3.3
+scripts/release.sh 1.3.4
 ```
 
 This script:
@@ -75,7 +75,7 @@ This script:
 If you have a Developer ID certificate, you can sign with it:
 
 ```bash
-SIGN_IDENTITY="Developer ID Application: Your Name (TEAMID)" scripts/release.sh 1.3.3
+SIGN_IDENTITY="Developer ID Application: Your Name (TEAMID)" scripts/release.sh 1.3.4
 ```
 
 ---
@@ -85,5 +85,7 @@ SIGN_IDENTITY="Developer ID Application: Your Name (TEAMID)" scripts/release.sh 
 CloudBoost is a free, open-source tool built to solve a problem I faced as a gamer. If this utility has helped you eliminate stutters or improved your gaming experience, please consider **[sponsoring me](https://github.com/sponsors/victorbrandaao)**.
 
 **Sponsorships directly fund maintenance, bug fixes, and new features.**
+
+If you want to help keep CloudBoost stable and improving, please consider sponsoring.
 
 Your support helps me cover development costs, dedicate more time to fixing bugs, and keep the project open-source and free for everyone.
