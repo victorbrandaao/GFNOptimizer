@@ -10,7 +10,7 @@
 
 **CloudBoost** is a native, open-source macOS menu bar utility written in Swift. It optimizes your operating system in real-time to eliminate micro-stutters, ping spikes, and input lag during cloud gaming sessions.
 
-Currently supports **GeForce NOW**, **Boosteroid**, and **Xbox Cloud Gaming (xCloud)** natively.
+Currently supports natively: **GeForce NOW**, **Boosteroid**, **Xbox Cloud Gaming (xCloud)**, **Moonlight**, and **VoidLink Extreme**.
 
 <br>
 
@@ -29,12 +29,22 @@ Currently supports **GeForce NOW**, **Boosteroid**, and **Xbox Cloud Gaming (xCl
 macOS runs several background processes that compromise high-refresh-rate, low-latency video streams. When you enable CloudBoost, the app asks for Administrator privileges (just once per session) and automates the following tweaks:
 
 * **Kills Ping Spikes (AWDL Off):** Temporarily disables the `awdl0` network interface (used for AirDrop and Handoff). This stops the constant background Wi-Fi scanning, which is the main culprit behind sudden ping drops.
-* **Max CPU Priority (`renice`):** Identifies the process of your chosen platform (or your default browser for xCloud) and forces a maximum `-20` nice level priority, preventing background apps from stealing your CPU cycles and causing stream stutters.
+* **Max CPU Priority (`renice`):** Identifies the process of your chosen platform and forces a maximum `-20` nice level priority, preventing background apps from stealing your CPU cycles and causing stream stutters.
 * **Custom Mouse Profiles:** Lets you toggle between **FPS (Raw Input)** and **MOBA (Fast)** profiles directly from the menu bar, completely bypassing Apple's floaty native mouse acceleration curve.
 * **RAM Purge & DNS Flush:** Flushes your DNS cache to ensure direct routing and forces a purge of inactive unified memory, freeing up physical RAM for the stream decoder.
 * **Bandwidth & Power Focus:** Temporarily pauses Time Machine backups and triggers the native `caffeinate` command so your Mac doesn't throttle clock speeds or put the display to sleep mid-match.
 
 **The Fail-Safe:** The moment you click "Disable CloudBoost" or quit the app, absolutely everything is instantly reverted to your system's default state.
+
+---
+
+## ✨ Features
+
+* **Beautiful Popover UI:** A rich, programmatic dark-mode interface that fits perfectly natively on macOS.
+* **Floating Performance HUD:** A sleek "pill" overlay that floats in the corner of your screen showing live CPU usage, nice level, and ping stats, automatically repositioning itself when monitors change.
+* **Performance Presets:** Choose between *Competitive* (maximum boost), *Balanced* (network focus), and *Stream Quality* (disables RAM purging to avoid stream decoding micro-hitches).
+* **Auto-Detect Platform:** CloudBoost can automatically detect which platform you are playing and switch its priority targeting.
+* **Diagnostics & Safe Restore:** Keeps a snapshot of your system. If the app crashes, it automatically restores your settings on the next launch.
 
 ---
 
@@ -56,19 +66,7 @@ macOS runs several background processes that compromise high-refresh-rate, low-l
 > xattr -cr /Applications/"CloudBoost.app"
 > ```
 
-## 🧪 Current Beta Build (v1.2.0-beta)
-
-This is the current beta build and will remain the primary release for a few days while users validate it.
-
-What’s new:
-
-* Auto-detect active platform and auto-switch target.
-* Safe Restore snapshot/rollback after crashes.
-* Performance HUD with live CPU, nice value, and ping stats.
-* Presets (Competitive / Balanced / Stream Quality).
-* Allowlist/Blocklist for renice targeting.
-* Diagnostics export + status notifications.
-
+---
 
 ## 🛠️ Maintainer Release Flow
 
@@ -76,7 +74,7 @@ To avoid shipping stale bundles (wrong version/signature metadata), always gener
 
 ```bash
 chmod +x scripts/release.sh
-scripts/release.sh 1.2.0-beta
+scripts/release.sh 1.4.0
 ```
 
 This script:
@@ -89,7 +87,7 @@ This script:
 If you have a Developer ID certificate, you can sign with it:
 
 ```bash
-SIGN_IDENTITY="Developer ID Application: Your Name (TEAMID)" scripts/release.sh 1.2.0-beta
+SIGN_IDENTITY="Developer ID Application: Your Name (TEAMID)" scripts/release.sh 1.4.0
 ```
 
 ---
