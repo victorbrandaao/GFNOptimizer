@@ -4,7 +4,7 @@ class UpdateManager {
     static let shared = UpdateManager()
     
     // Atualizado para a versão 1.3.0
-    private let currentVersion = "1.3.0" 
+    private let currentVersion = "1.3.1" 
     
     // URL atualizada para o novo repositório CloudBoost
     private let releaseURL = URL(string: "https://api.github.com/repos/victorbrandaao/CloudBoost/releases/latest")!
