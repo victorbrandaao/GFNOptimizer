@@ -656,7 +656,7 @@ final class PopoverViewController: NSViewController {
     }
     
     @objc private func buyLicense() {
-        if let url = URL(string: "https://cloudboost.lemonsqueezy.com/checkout/buy/2bcc8a1b-04fa-4c18-b85b-54f8228fee73") {
+        if let url = URL(string: "https://victorbrandao0.gumroad.com/l/CloudBoost") {
             NSWorkspace.shared.open(url)
         }
     }

@@ -21,9 +21,9 @@ final class ProManager {
         }
     }
     
-    /// Validates the license key online with Lemon Squeezy API
+    /// Validates the license key online with Gumroad API
     func validateLicense(key: String, completion: @escaping (Bool, String?) -> Void) {
-        guard let url = URL(string: "https://api.lemonsqueezy.com/v1/licenses/validate") else {
+        guard let url = URL(string: "https://api.gumroad.com/v2/licenses/verify") else {
             completion(false, "Invalid URL")
             return
         }
@@ -33,7 +33,9 @@ final class ProManager {
         request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
         request.setValue("application/json", forHTTPHeaderField: "Accept")
         
-        let bodyString = "license_key=\(key)"
+        // The Gumroad product permalink
+        let productPermalink = "CloudBoost"
+        let bodyString = "product_permalink=\(productPermalink)&license_key=\(key)"
         request.httpBody = bodyString.data(using: .utf8)
         
         let task = URLSession.shared.dataTask(with: request) { [weak self] data, response, error in
@@ -51,8 +53,8 @@ final class ProManager {
             
             do {
                 if let json = try JSONSerialization.jsonObject(with: data) as? [String: Any] {
-                    // Lemon Squeezy returns 'valid': true/false in 'valid' or 'meta' field usually
-                    if let valid = json["valid"] as? Bool, valid == true {
+                    // Gumroad returns 'success': true/false
+                    if let valid = json["success"] as? Bool, valid == true {
                         // Success! Save to keychain and unlock
                         if let keyData = key.data(using: .utf8) {
                             KeychainHelper.shared.save(keyData, service: self.service, account: self.account)
@@ -63,7 +65,7 @@ final class ProManager {
                         }
                     } else {
                         // Invalid key
-                        let errorMsg = json["error"] as? String ?? "Invalid License Key"
+                        let errorMsg = json["message"] as? String ?? "Invalid License Key"
                         DispatchQueue.main.async { completion(false, errorMsg) }
                     }
                 } else {
