@@ -50,4 +50,8 @@ macOS runs several background processes that compromise high-refresh-rate, low-l
 1. Go to the [Releases](https://github.com/victorbrandaao/CloudBoost/releases) tab and download the latest `.dmg` file.
 2. Open the `.dmg` and drag **CloudBoost.app** to your `/Applications` folder.
 
-> **⚠️
+> **⚠️ Important note on macOS Gatekeeper:**
+> Because this is an unsigned open-source tool, macOS will likely throw an "App is damaged" error when you try to open it. To clear the quarantine flag, simply open your Terminal and run:
+> ```bash
+> xattr -cr /Applications/"CloudBoost.app"
+> ```
