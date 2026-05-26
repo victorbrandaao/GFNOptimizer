@@ -6,13 +6,19 @@
     <string>CloudBoost</string>
     <key>CFBundleIdentifier</key>
     <string>com.gfnbooster.app</string>
-    <key>CFBundleName</key>
-    <string>CloudBoost</string>
-    <key>CFBundleShortVersionString</key>
-    <string>1.2.0</string>
-    <key>LSUIElement</key>
-    <true/>
     <key>CFBundleIconFile</key>
     <string>AppIcon.icns</string>
+    <key>CFBundleName</key>
+    <string>CloudBoost</string>
+    <key>CFBundlePackageType</key>
+    <string>APPL</string>
+    <key>CFBundleShortVersionString</key>
+    <string>1.3.2</string>
+    <key>CFBundleVersion</key>
+    <string>1.3.2</string>
+    <key>LSMinimumSystemVersion</key>
+    <string>12.0</string>
+    <key>LSUIElement</key>
+    <true/>
 </dict>
 </plist>

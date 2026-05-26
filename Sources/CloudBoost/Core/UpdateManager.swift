@@ -2,11 +2,16 @@ import AppKit
 
 class UpdateManager {
     static let shared = UpdateManager()
+
+    // Usa a versão do bundle para evitar divergência entre tag e app empacotado.
+    private var currentVersion: String {
+        if let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String,
+           !version.isEmpty {
+            return version
+        }
+        return "0.0.0"
+    }
     
-    // Atualizado para a versão 1.3.0
-    private let currentVersion = "1.3.1" 
-    
-    // URL atualizada para o novo repositório CloudBoost
     private let releaseURL = URL(string: "https://api.github.com/repos/victorbrandaao/CloudBoost/releases/latest")!
     
     func checkForUpdates(silent: Bool = false) {

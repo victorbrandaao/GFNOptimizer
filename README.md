@@ -56,6 +56,28 @@ macOS runs several background processes that compromise high-refresh-rate, low-l
 > xattr -cr /Applications/"CloudBoost.app"
 > ```
 
+## 🛠️ Maintainer Release Flow
+
+To avoid shipping stale bundles (wrong version/signature metadata), always generate releases from source using the release script:
+
+```bash
+chmod +x scripts/release.sh
+scripts/release.sh 1.3.2
+```
+
+This script:
+
+* Builds a fresh release binary with SwiftPM.
+* Creates a clean `.app` bundle with the version passed in the command.
+* Signs the full bundle (not only the executable).
+* Produces `CloudBoost_v<version>.dmg` at the repository root.
+
+If you have a Developer ID certificate, you can sign with it:
+
+```bash
+SIGN_IDENTITY="Developer ID Application: Your Name (TEAMID)" scripts/release.sh 1.3.2
+```
+
 ---
 
 ## 💖 Support the Project
