@@ -90,11 +90,24 @@ struct Preferences {
     static func presetConfig() -> PerformancePreset {
         switch selectedPreset {
         case .competitive:
-            return PerformancePreset(name: .competitive, disableAwdl: true, flushDns: true, disableTimeMachine: true, purgeMemory: true, keepAwake: true)
+            // Max performance: every tweak enabled.
+            return PerformancePreset(name: .competitive,
+                                    disableAwdl: true, flushDns: true,
+                                    disableTimeMachine: true, purgeMemory: true,
+                                    keepAwake: true)
         case .balanced:
-            return PerformancePreset(name: .balanced, disableAwdl: true, flushDns: true, disableTimeMachine: false, purgeMemory: false, keepAwake: true)
+            // Network-only: kills ping spikes without aggressive system changes.
+            return PerformancePreset(name: .balanced,
+                                    disableAwdl: true, flushDns: true,
+                                    disableTimeMachine: false, purgeMemory: false,
+                                    keepAwake: true)
         case .streamQuality:
-            return PerformancePreset(name: .streamQuality, disableAwdl: true, flushDns: true, disableTimeMachine: true, purgeMemory: true, keepAwake: true)
+            // Stream-stable: AWDL + DNS + no Time Machine I/O, but skips RAM
+            // purge to avoid the memory-pressure spike that causes decoder hitches.
+            return PerformancePreset(name: .streamQuality,
+                                    disableAwdl: true, flushDns: true,
+                                    disableTimeMachine: true, purgeMemory: false,
+                                    keepAwake: true)
         }
     }
 }

@@ -9,7 +9,7 @@ fi
 
 VERSION="$1"
 APP_NAME="CloudBoost"
-BUNDLE_ID="com.gfnbooster.app"
+BUNDLE_ID="com.cloudboost.app"
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 WORK_DIR="$ROOT_DIR/.release"
 APP_DIR="$WORK_DIR/${APP_NAME}.app"

@@ -1,8 +1,8 @@
 import Foundation
 
 enum MouseProfile: Double {
-    case rawFPS = -1.0
-    case fastMOBA = 2.5
+    case rawFPS     = 0.0   // 0.0 disables acceleration; -1.0 is undefined on some macOS versions
+    case fastMOBA   = 2.5
     case defaultMac = 1.5
     
     var title: String {

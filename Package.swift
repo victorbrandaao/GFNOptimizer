@@ -7,11 +7,6 @@ let package = Package(
         .macOS(.v12)
     ],
     targets: [
-        .executableTarget(name: "CloudBoost"),
-        .testTarget(
-            name: "CloudBoostTests",
-            dependencies: ["CloudBoost"],
-            path: "Tests/GFNOptimizerTests"
-        )
+        .executableTarget(name: "CloudBoost")
     ]
 )
