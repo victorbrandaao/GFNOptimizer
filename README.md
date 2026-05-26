@@ -56,6 +56,19 @@ macOS runs several background processes that compromise high-refresh-rate, low-l
 > xattr -cr /Applications/"CloudBoost.app"
 > ```
 
+## ✅ Current Stable Build (v1.3.4)
+
+This is the current stability test build and will remain the primary release for a few days while users validate it.
+
+What’s new:
+
+* Auto-detect active platform and auto-switch target.
+* Safe Restore snapshot/rollback after crashes.
+* Performance HUD with live CPU, nice value, and ping stats.
+* Presets (Competitive / Balanced / Stream Quality).
+* Allowlist/Blocklist for renice targeting.
+* Diagnostics export + status notifications.
+
 ## 🛠️ Maintainer Release Flow
 
 To avoid shipping stale bundles (wrong version/signature metadata), always generate releases from source using the release script:
