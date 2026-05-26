@@ -16,8 +16,7 @@ Currently supports **GeForce NOW**, **Boosteroid**, and **Xbox Cloud Gaming (xCl
 
 <p align="center">
   <img src="assets/img1.png" width="400" alt="CloudBoost Default Menu">
-  &nbsp;&nbsp;&nbsp;&nbsp;
-  <img src="assets/img2.png" width="400" alt="CloudBoost Active Target Platform">
+  &nbsp;&nbsp;&nbsp;&nbsp;>
 </p>
 
 <br>
