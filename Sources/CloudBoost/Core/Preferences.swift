@@ -4,6 +4,13 @@ enum PresetName: String, CaseIterable {
     case competitive = "Competitive"
     case balanced = "Balanced"
     case streamQuality = "Stream Quality"
+
+    var isPro: Bool {
+        switch self {
+        case .competitive, .streamQuality: return true
+        case .balanced: return false
+        }
+    }
 }
 
 struct PerformancePreset {

@@ -64,7 +64,40 @@ final class PopoverViewController: NSViewController {
         }
     }
 
-    // MARK: - Palette
+    // MARK: - Nested: HoverButton
+    
+    private final class HoverButton: NSButton {
+        private var trackingArea: NSTrackingArea?
+        var normalBgColor: NSColor? { didSet { layer?.backgroundColor = normalBgColor?.cgColor } }
+        var hoverBgColor: NSColor?
+        var isLockedState: Bool = false
+        
+        override func updateTrackingAreas() {
+            super.updateTrackingAreas()
+            if let ta = trackingArea { removeTrackingArea(ta) }
+            let options: NSTrackingArea.Options = [.activeAlways, .mouseEnteredAndExited]
+            trackingArea = NSTrackingArea(rect: bounds, options: options, owner: self, userInfo: nil)
+            addTrackingArea(trackingArea!)
+        }
+        
+        override func mouseEntered(with event: NSEvent) {
+            guard isEnabled, !isLockedState, let h = hoverBgColor else { return }
+            NSAnimationContext.runAnimationGroup { ctx in
+                ctx.duration = 0.15
+                self.animator().layer?.backgroundColor = h.cgColor
+            }
+        }
+        
+        override func mouseExited(with event: NSEvent) {
+            guard let n = normalBgColor else { return }
+            NSAnimationContext.runAnimationGroup { ctx in
+                ctx.duration = 0.2
+                self.animator().layer?.backgroundColor = n.cgColor
+            }
+        }
+    }
+
+    // MARK: - Nested: gradient boost button
 
     private enum Palette {
         static let green        = NSColor(calibratedRed: 0.00, green: 0.85, blue: 0.51, alpha: 1.0)
@@ -109,6 +142,9 @@ final class PopoverViewController: NSViewController {
     private var hudSwitch:         NSSwitch!
     private var notifSwitch:       NSSwitch!
     private var keepAliveSwitch:   NSSwitch!
+    
+    private var autoDetectLabel:   NSTextField?
+    private var keepAliveLabel:    NSTextField?
 
     // MARK: - Lifecycle
 
@@ -152,6 +188,14 @@ final class PopoverViewController: NSViewController {
     override func viewWillAppear() {
         super.viewWillAppear()
         syncSwitches()
+        refreshAll()
+        
+        NotificationCenter.default.addObserver(self, selector: #selector(refreshAll), name: .proStatusChanged, object: nil)
+    }
+    
+    override func viewDidDisappear() {
+        super.viewDidDisappear()
+        NotificationCenter.default.removeObserver(self, name: .proStatusChanged, object: nil)
     }
 
     // MARK: - Section builders
@@ -250,12 +294,14 @@ final class PopoverViewController: NSViewController {
     }
 
     private func makePlatformCard(_ platform: CloudPlatform) -> NSButton {
-        let btn = NSButton(frame: .zero)
+        let btn = HoverButton(frame: .zero)
         btn.isBordered = false
         btn.wantsLayer = true
         btn.layer?.cornerRadius    = 8
-        btn.layer?.backgroundColor = Palette.card.cgColor
-
+        
+        btn.normalBgColor = Palette.card
+        btn.hoverBgColor  = NSColor(calibratedRed: 0.22, green: 0.22, blue: 0.28, alpha: 1.0)
+        
         let cfg = NSImage.SymbolConfiguration(pointSize: 15, weight: .medium)
         if let img = NSImage(systemSymbolName: platform.iconSymbol,
                              accessibilityDescription: nil)?
@@ -336,7 +382,8 @@ final class PopoverViewController: NSViewController {
         spacer.setContentHuggingPriority(.defaultLow, for: .horizontal)
         row.addArrangedSubview(spacer)
 
-        let labels = PresetName.allCases.map { $0.shortLabel }
+        let isPro = ProManager.shared.isProUnlocked
+        let labels = PresetName.allCases.map { $0.isPro && !isPro ? "\($0.shortLabel) 🔒" : $0.shortLabel }
         presetControl = NSSegmentedControl(labels: labels, trackingMode: .selectOne,
                                            target: self, action: #selector(presetChanged(_:)))
         presetControl.controlSize      = .small
@@ -355,19 +402,25 @@ final class PopoverViewController: NSViewController {
         let outer = vstack(insets: NSEdgeInsets(top: 8, left: 14, bottom: 10, right: 14), spacing: 2)
         outer.addArrangedSubview(sectionLabel("SETTINGS"))
 
+        let isPro = ProManager.shared.isProUnlocked
         let rows: [(String, String, NSSwitch)] = [
-            ("Auto-detect Platform", "wand.and.stars",  autoDetectSwitch),
+            ("Auto-detect Platform" + (isPro ? "" : " 🔒"), "wand.and.stars",  autoDetectSwitch),
             ("HUD Overlay",          "gauge",            hudSwitch),
             ("Notifications",        "bell.badge",       notifSwitch),
-            ("Keep Alive",           "timer",            keepAliveSwitch),
+            ("Keep Alive" + (isPro ? "" : " 🔒"),           "timer",            keepAliveSwitch),
         ]
+        var rowIndex = 0
         for (title, icon, toggle) in rows {
-            outer.addArrangedSubview(toggleRow(title: title, icon: icon, toggle: toggle))
+            let rowView = toggleRow(title: title, icon: icon, toggle: toggle)
+            outer.addArrangedSubview(rowView.view)
+            if rowIndex == 0 { autoDetectLabel = rowView.label }
+            if rowIndex == 3 { keepAliveLabel = rowView.label }
+            rowIndex += 1
         }
         return outer
     }
 
-    private func toggleRow(title: String, icon: String, toggle: NSSwitch) -> NSView {
+    private func toggleRow(title: String, icon: String, toggle: NSSwitch) -> (view: NSView, label: NSTextField) {
         let row = NSStackView()
         row.orientation = .horizontal
         row.spacing     = 8
@@ -391,7 +444,7 @@ final class PopoverViewController: NSViewController {
         row.addArrangedSubview(lbl)
         row.addArrangedSubview(spacer)
         row.addArrangedSubview(toggle)
-        return row
+        return (row, lbl)
     }
 
     private func buildFooter() -> NSView {
@@ -414,11 +467,12 @@ final class PopoverViewController: NSViewController {
     }
 
     private func footerButton(title: String, icon: String, action: Selector) -> NSButton {
-        let btn = NSButton()
+        let btn = HoverButton()
         btn.isBordered = false
         btn.wantsLayer = true
         btn.layer?.cornerRadius    = 7
-        btn.layer?.backgroundColor = Palette.card.cgColor
+        btn.normalBgColor = Palette.card
+        btn.hoverBgColor  = NSColor(calibratedRed: 0.22, green: 0.22, blue: 0.28, alpha: 1.0)
         btn.target = self
         btn.action = action
 
@@ -441,6 +495,11 @@ final class PopoverViewController: NSViewController {
     @objc private func platformCardClicked(_ sender: NSButton) {
         guard let id = sender.identifier,
               let platform = CloudPlatform(rawValue: id.rawValue) else { return }
+              
+        if platform.isPro && !showProPrompt(featureName: platform.rawValue) {
+            return
+        }
+        
         selectedPlatform = platform
         refreshPlatformCards()
         onPlatformChanged?(platform)
@@ -454,12 +513,165 @@ final class PopoverViewController: NSViewController {
 
     @objc private func presetChanged(_ sender: NSSegmentedControl) {
         let preset = PresetName.allCases[sender.selectedSegment]
+        if preset.isPro && !showProPrompt(featureName: preset.rawValue) {
+            presetControl?.selectedSegment = PresetName.allCases.firstIndex(of: Preferences.selectedPreset) ?? 0
+            return
+        }
         onPresetChanged?(preset)
     }
-    @objc private func autoDetectToggled() { onToggleAutoDetect?() }
+    
+    @objc private func autoDetectToggled() { 
+        if autoDetectSwitch.state == .on && !showProPrompt(featureName: "Auto-Detect") {
+            autoDetectSwitch.state = .off
+            return
+        }
+        onToggleAutoDetect?() 
+    }
+    
     @objc private func hudToggled()        { onToggleHUD?() }
     @objc private func notifToggled()      { onToggleNotifications?() }
-    @objc private func keepAliveToggled()  { onToggleKeepAlive?() }
+    
+    @objc private func keepAliveToggled()  { 
+        if keepAliveSwitch.state == .on && !showProPrompt(featureName: "Keep Alive") {
+            keepAliveSwitch.state = .off
+            return
+        }
+        onToggleKeepAlive?() 
+    }
+
+    // MARK: - License UI
+    
+    private var licenseOverlay: NSView?
+    private var licenseTextField: NSTextField?
+    
+    private func showProPrompt(featureName: String) -> Bool {
+        if ProManager.shared.isProUnlocked { return true }
+        if licenseOverlay != nil { return false } // Already showing
+        
+        let overlay = NSVisualEffectView(frame: view.bounds)
+        overlay.material = .hudWindow
+        overlay.blendingMode = .withinWindow
+        overlay.state = .active
+        overlay.wantsLayer = true
+        overlay.alphaValue = 0
+        overlay.translatesAutoresizingMaskIntoConstraints = false
+        
+        let stack = NSStackView()
+        stack.orientation = .vertical
+        stack.spacing = 14
+        stack.alignment = .centerX
+        stack.translatesAutoresizingMaskIntoConstraints = false
+        overlay.addSubview(stack)
+        
+        NSLayoutConstraint.activate([
+            overlay.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            overlay.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            overlay.topAnchor.constraint(equalTo: view.topAnchor),
+            overlay.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            stack.centerXAnchor.constraint(equalTo: overlay.centerXAnchor),
+            stack.centerYAnchor.constraint(equalTo: overlay.centerYAnchor)
+        ])
+        
+        // Icon
+        let iconView = NSImageView(image: NSImage(systemSymbolName: "lock.fill", accessibilityDescription: nil)!)
+        iconView.contentTintColor = Palette.green
+        iconView.symbolConfiguration = NSImage.SymbolConfiguration(pointSize: 28, weight: .regular)
+        stack.addArrangedSubview(iconView)
+        
+        // Title
+        let titleLabel = label("Unlock CloudBoost PRO", size: 16, weight: .bold, color: .white)
+        stack.addArrangedSubview(titleLabel)
+        
+        // Info
+        let info = NSTextField(labelWithString: "'\(featureName)' is a PRO feature.\nPurchase a license to unlock Auto-Detect,\nExtreme Presets, and additional platforms.")
+        info.font = .systemFont(ofSize: 11)
+        info.textColor = Palette.muted
+        info.alignment = .center
+        stack.addArrangedSubview(info)
+        
+        // Text field
+        let tf = NSTextField()
+        tf.placeholderString = "Paste License Key here..."
+        tf.focusRingType = .none
+        tf.wantsLayer = true
+        tf.layer?.cornerRadius = 6
+        tf.layer?.borderWidth = 1
+        tf.layer?.borderColor = Palette.separator.cgColor
+        tf.translatesAutoresizingMaskIntoConstraints = false
+        tf.widthAnchor.constraint(equalToConstant: 240).isActive = true
+        tf.heightAnchor.constraint(equalToConstant: 30).isActive = true
+        stack.addArrangedSubview(tf)
+        licenseTextField = tf
+        
+        // Buttons
+        let btnStack = NSStackView()
+        btnStack.orientation = .horizontal
+        btnStack.spacing = 8
+        
+        let unlockBtn = NSButton(title: "Unlock", target: self, action: #selector(performUnlock))
+        unlockBtn.bezelStyle = .rounded
+        unlockBtn.controlSize = .large
+        
+        let buyBtn = NSButton(title: "Buy License", target: self, action: #selector(buyLicense))
+        buyBtn.bezelStyle = .rounded
+        buyBtn.controlSize = .large
+        
+        let cancelBtn = NSButton(title: "Cancel", target: self, action: #selector(dismissOverlay))
+        cancelBtn.bezelStyle = .rounded
+        cancelBtn.controlSize = .large
+        
+        btnStack.addArrangedSubview(cancelBtn)
+        btnStack.addArrangedSubview(buyBtn)
+        btnStack.addArrangedSubview(unlockBtn)
+        stack.addArrangedSubview(btnStack)
+        
+        view.addSubview(overlay)
+        licenseOverlay = overlay
+        
+        NSAnimationContext.runAnimationGroup { ctx in
+            ctx.duration = 0.25
+            overlay.animator().alphaValue = 1.0
+        }
+        return false
+    }
+    
+    @objc private func performUnlock() {
+        guard let key = licenseTextField?.stringValue.trimmingCharacters(in: .whitespacesAndNewlines), !key.isEmpty else { return }
+        
+        licenseTextField?.isEnabled = false
+        ProManager.shared.validateLicense(key: key) { [weak self] success, errorMsg in
+            guard let self = self else { return }
+            self.licenseTextField?.isEnabled = true
+            
+            if success {
+                self.dismissOverlay()
+            } else {
+                let alert = NSAlert()
+                alert.messageText = "Validation Failed"
+                alert.informativeText = errorMsg ?? "Invalid License Key."
+                alert.alertStyle = .warning
+                alert.beginSheetModal(for: self.view.window!)
+            }
+        }
+    }
+    
+    @objc private func buyLicense() {
+        if let url = URL(string: "https://cloudboost.lemonsqueezy.com/checkout/buy/2bcc8a1b-04fa-4c18-b85b-54f8228fee73") {
+            NSWorkspace.shared.open(url)
+        }
+    }
+    
+    @objc private func dismissOverlay() {
+        guard let overlay = licenseOverlay else { return }
+        NSAnimationContext.runAnimationGroup({ ctx in
+            ctx.duration = 0.2
+            overlay.animator().alphaValue = 0
+        }, completionHandler: {
+            overlay.removeFromSuperview()
+            self.licenseOverlay = nil
+            self.licenseTextField = nil
+        })
+    }
 
     // MARK: - Public update API
 
@@ -486,7 +698,11 @@ final class PopoverViewController: NSViewController {
         boostButton?.isLoadingState = loading
     }
 
-    // MARK: - Refresh helpers
+    @objc private func refreshAll() {
+        refreshPlatformCards()
+        refreshPresetControl()
+        refreshSettingsLabels()
+    }
 
     private func refreshBoostButton() {
         boostButton?.isActiveState  = isBoosterActive
@@ -494,20 +710,48 @@ final class PopoverViewController: NSViewController {
     }
 
     private func refreshPlatformCards() {
+        let isPro = ProManager.shared.isProUnlocked
         for (platform, btn) in platformButtons {
             let sel = platform == selectedPlatform
-            btn.layer?.backgroundColor = sel ? Palette.cardSelected.cgColor : Palette.card.cgColor
+            var title = platform.shortName
+            
+            let isLocked = platform.isPro && !isPro
+            if let hoverBtn = btn as? HoverButton { hoverBtn.isLockedState = isLocked }
+            
+            if isLocked { title += " 🔒" }
+            
+            if let hoverBtn = btn as? HoverButton {
+                hoverBtn.normalBgColor = sel ? Palette.cardSelected : Palette.card
+            } else {
+                btn.layer?.backgroundColor = sel ? Palette.cardSelected.cgColor : Palette.card.cgColor
+            }
+            
             btn.layer?.borderWidth     = sel ? 1.5 : 0
             btn.layer?.borderColor     = sel ? Palette.green.cgColor : nil
             btn.contentTintColor       = sel ? Palette.green : NSColor(white: 0.78, alpha: 1)
+            btn.alphaValue             = isLocked ? 0.4 : 1.0
             btn.attributedTitle        = NSAttributedString(
-                string: platform.shortName,
+                string: title,
                 attributes: [
                     .foregroundColor: sel ? Palette.green : NSColor(white: 0.68, alpha: 1),
                     .font: NSFont.systemFont(ofSize: 8.5, weight: .semibold)
                 ]
             )
         }
+    }
+    
+    private func refreshPresetControl() {
+        let isPro = ProManager.shared.isProUnlocked
+        for (index, preset) in PresetName.allCases.enumerated() {
+            let title = preset.isPro && !isPro ? "\(preset.shortLabel) 🔒" : preset.shortLabel
+            presetControl?.setLabel(title, forSegment: index)
+        }
+    }
+    
+    private func refreshSettingsLabels() {
+        let isPro = ProManager.shared.isProUnlocked
+        autoDetectLabel?.stringValue = isPro ? "Auto-detect Platform" : "Auto-detect Platform 🔒"
+        keepAliveLabel?.stringValue = isPro ? "Keep Alive" : "Keep Alive 🔒"
     }
 
     private func refreshStatusPill() {

@@ -32,6 +32,13 @@ enum CloudPlatform: String, CaseIterable {
         }
     }
 
+    var isPro: Bool {
+        switch self {
+        case .boosteroid, .moonlight, .voidlink: return true
+        case .geforceNow, .xcloud: return false
+        }
+    }
+
     // MARK: - URLs & Bundle IDs
 
     /// App bundle ID (nil for browser-only platforms).
