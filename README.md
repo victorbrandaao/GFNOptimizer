@@ -55,3 +55,11 @@ macOS runs several background processes that compromise high-refresh-rate, low-l
 > ```bash
 > xattr -cr /Applications/"CloudBoost.app"
 > ```
+
+---
+
+## 💖 Support the Project
+
+CloudBoost is a free, open-source tool built to solve a problem I faced as a gamer. If this utility has helped you eliminate stutters or improved your gaming experience, please consider **[sponsoring me](https://github.com/sponsors/victorbrandaao)**. 
+
+Your support helps me cover development costs, dedicate more time to fixing bugs, and keep the project open-source and free for everyone.
