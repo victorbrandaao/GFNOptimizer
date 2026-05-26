@@ -73,9 +73,15 @@ class MenuBuilder: NSObject {
         let menu = NSMenu()
         
         if let button = statusItem.button {
-            // Se tiver uma lógica de ícone ativo/inativo, aplique aqui
-            button.image = NSImage(named: NSImage.Name("CloudBoostIcon"))
-            button.image?.isTemplate = true
+            // Usa um símbolo do sistema para garantir visibilidade em `swift run` e no app distribuído.
+            if let symbolImage = NSImage(systemSymbolName: isBoosterActive ? "bolt.fill" : "cloud.fill", accessibilityDescription: "CloudBoost") {
+                symbolImage.isTemplate = true
+                button.image = symbolImage
+                button.title = ""
+            } else {
+                button.image = nil
+                button.title = "CB"
+            }
         }
         
         // 1. Plataformas
