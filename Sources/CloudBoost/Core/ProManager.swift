@@ -33,9 +33,12 @@ final class ProManager {
         request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
         request.setValue("application/json", forHTTPHeaderField: "Accept")
         
-        // The Gumroad product permalink
+        // The Gumroad product permalink and product_id
         let productPermalink = "CloudBoost"
-        let bodyString = "product_permalink=\(productPermalink)&license_key=\(key)"
+        let productId = "FPPuMzAsjXANmNOzdPUGJw=="
+        let encodedKey = key.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? key
+        let encodedProductId = productId.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? productId
+        let bodyString = "product_permalink=\(productPermalink)&product_id=\(encodedProductId)&license_key=\(encodedKey)"
         request.httpBody = bodyString.data(using: .utf8)
         
         let task = URLSession.shared.dataTask(with: request) { [weak self] data, response, error in

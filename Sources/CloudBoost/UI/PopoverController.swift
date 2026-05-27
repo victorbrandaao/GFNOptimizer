@@ -6,7 +6,6 @@ final class PopoverController: NSObject, NSPopoverDelegate {
     let viewController: PopoverViewController
     private let popover:    NSPopover
     private let statusItem: NSStatusItem
-    private var clickMonitor: Any?
 
     init(statusItem: NSStatusItem) {
         self.statusItem     = statusItem
@@ -14,7 +13,8 @@ final class PopoverController: NSObject, NSPopoverDelegate {
 
         popover                        = NSPopover()
         popover.contentViewController  = viewController
-        popover.behavior               = .applicationDefined   // Manual control for reliability
+        // .transient closes when clicking outside, while still allowing interactions inside.
+        popover.behavior               = .transient
         popover.animates               = true
 
         super.init()
@@ -42,6 +42,7 @@ final class PopoverController: NSObject, NSPopoverDelegate {
         if popover.isShown {
             close()
         } else {
+            NSApp.activate(ignoringOtherApps: true)
             popover.show(relativeTo: sender.bounds, of: sender, preferredEdge: .minY)
         }
     }
@@ -62,20 +63,5 @@ final class PopoverController: NSObject, NSPopoverDelegate {
         button.image = img
     }
 
-    // MARK: - Outside-click monitor
-
-    func popoverWillShow(_ notification: Notification) {
-        clickMonitor = NSEvent.addGlobalMonitorForEvents(
-            matching: [.leftMouseDown, .rightMouseDown]
-        ) { [weak self] _ in
-            self?.close()
-        }
-    }
-
-    func popoverDidClose(_ notification: Notification) {
-        if let monitor = clickMonitor {
-            NSEvent.removeMonitor(monitor)
-            clickMonitor = nil
-        }
-    }
+    // MARK: - NSPopoverDelegate
 }

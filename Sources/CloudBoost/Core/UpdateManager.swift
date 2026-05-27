@@ -14,7 +14,12 @@ class UpdateManager {
     private let releaseURL = URL(string: "https://api.github.com/repos/victorbrandaao/CloudBoost/releases/latest")!
 
     func checkForUpdates(silent: Bool = false) {
-        guard let currentVersion else { return }
+        guard let currentVersion else {
+            if !silent {
+                showError("Update check is unavailable in dev builds. Use a signed .app bundle to check updates.")
+            }
+            return
+        }
 
         let task = URLSession.shared.dataTask(with: releaseURL) { data, _, error in
             guard let data, error == nil else {

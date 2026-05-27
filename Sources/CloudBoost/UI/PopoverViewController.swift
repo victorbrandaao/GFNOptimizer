@@ -81,6 +81,7 @@ final class PopoverViewController: NSViewController {
         }
         
         override func mouseEntered(with event: NSEvent) {
+            super.mouseEntered(with: event)
             guard isEnabled, !isLockedState, let h = hoverBgColor else { return }
             NSAnimationContext.runAnimationGroup { ctx in
                 ctx.duration = 0.15
@@ -89,6 +90,7 @@ final class PopoverViewController: NSViewController {
         }
         
         override func mouseExited(with event: NSEvent) {
+            super.mouseExited(with: event)
             guard let n = normalBgColor else { return }
             NSAnimationContext.runAnimationGroup { ctx in
                 ctx.duration = 0.2
@@ -543,95 +545,50 @@ final class PopoverViewController: NSViewController {
     
     private var licenseOverlay: NSView?
     private var licenseTextField: NSTextField?
+    private var licenseErrorLabel: NSTextField?
     
     private func showProPrompt(featureName: String) -> Bool {
         if ProManager.shared.isProUnlocked { return true }
-        if licenseOverlay != nil { return false } // Already showing
-        
-        let overlay = NSVisualEffectView(frame: view.bounds)
-        overlay.material = .hudWindow
-        overlay.blendingMode = .withinWindow
-        overlay.state = .active
-        overlay.wantsLayer = true
-        overlay.alphaValue = 0
-        overlay.translatesAutoresizingMaskIntoConstraints = false
-        
-        let stack = NSStackView()
-        stack.orientation = .vertical
-        stack.spacing = 14
-        stack.alignment = .centerX
-        stack.translatesAutoresizingMaskIntoConstraints = false
-        overlay.addSubview(stack)
-        
-        NSLayoutConstraint.activate([
-            overlay.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            overlay.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            overlay.topAnchor.constraint(equalTo: view.topAnchor),
-            overlay.bottomAnchor.constraint(equalTo: view.bottomAnchor),
-            stack.centerXAnchor.constraint(equalTo: overlay.centerXAnchor),
-            stack.centerYAnchor.constraint(equalTo: overlay.centerYAnchor)
-        ])
-        
-        // Icon
-        let iconView = NSImageView(image: NSImage(systemSymbolName: "lock.fill", accessibilityDescription: nil)!)
-        iconView.contentTintColor = Palette.green
-        iconView.symbolConfiguration = NSImage.SymbolConfiguration(pointSize: 28, weight: .regular)
-        stack.addArrangedSubview(iconView)
-        
-        // Title
-        let titleLabel = label("Unlock CloudBoost PRO", size: 16, weight: .bold, color: .white)
-        stack.addArrangedSubview(titleLabel)
-        
-        // Info
-        let info = NSTextField(labelWithString: "'\(featureName)' is a PRO feature.\nPurchase a license to unlock Auto-Detect,\nExtreme Presets, and additional platforms.")
-        info.font = .systemFont(ofSize: 11)
-        info.textColor = Palette.muted
-        info.alignment = .center
-        stack.addArrangedSubview(info)
-        
-        // Text field
-        let tf = NSTextField()
-        tf.placeholderString = "Paste License Key here..."
-        tf.focusRingType = .none
-        tf.wantsLayer = true
-        tf.layer?.cornerRadius = 6
-        tf.layer?.borderWidth = 1
-        tf.layer?.borderColor = Palette.separator.cgColor
-        tf.translatesAutoresizingMaskIntoConstraints = false
-        tf.widthAnchor.constraint(equalToConstant: 240).isActive = true
-        tf.heightAnchor.constraint(equalToConstant: 30).isActive = true
-        stack.addArrangedSubview(tf)
-        licenseTextField = tf
-        
-        // Buttons
-        let btnStack = NSStackView()
-        btnStack.orientation = .horizontal
-        btnStack.spacing = 8
-        
-        let unlockBtn = NSButton(title: "Unlock", target: self, action: #selector(performUnlock))
-        unlockBtn.bezelStyle = .rounded
-        unlockBtn.controlSize = .large
-        
-        let buyBtn = NSButton(title: "Buy License", target: self, action: #selector(buyLicense))
-        buyBtn.bezelStyle = .rounded
-        buyBtn.controlSize = .large
-        
-        let cancelBtn = NSButton(title: "Cancel", target: self, action: #selector(dismissOverlay))
-        cancelBtn.bezelStyle = .rounded
-        cancelBtn.controlSize = .large
-        
-        btnStack.addArrangedSubview(cancelBtn)
-        btnStack.addArrangedSubview(buyBtn)
-        btnStack.addArrangedSubview(unlockBtn)
-        stack.addArrangedSubview(btnStack)
-        
-        view.addSubview(overlay)
-        licenseOverlay = overlay
-        
-        NSAnimationContext.runAnimationGroup { ctx in
-            ctx.duration = 0.25
-            overlay.animator().alphaValue = 1.0
+
+        if !Thread.isMainThread {
+            DispatchQueue.main.async { _ = self.showProPrompt(featureName: featureName) }
+            return false
         }
+
+        DiagnosticsManager.shared.log("showProPrompt: \(featureName)")
+        NSLog("CloudBoost showProPrompt: %@", featureName)
+
+        let alert = NSAlert()
+        alert.messageText = "Unlock CloudBoost PRO"
+        alert.informativeText = "'\(featureName)' is a PRO feature.\nPurchase a license to unlock Auto-Detect,\nExtreme Presets, and additional platforms."
+        alert.alertStyle = .informational
+
+        let tf = NSTextField(string: "")
+        tf.placeholderString = "Paste License Key here..."
+        tf.frame = NSRect(x: 0, y: 0, width: 280, height: 24)
+        alert.accessoryView = tf
+
+        alert.addButton(withTitle: "Unlock")
+        alert.addButton(withTitle: "Buy License")
+        alert.addButton(withTitle: "Cancel")
+
+        let handleResponse: (NSApplication.ModalResponse) -> Void = { [weak self] response in
+            guard let self else { return }
+            if response == .alertFirstButtonReturn {
+                let key = tf.stringValue.trimmingCharacters(in: .whitespacesAndNewlines)
+                if !key.isEmpty { self.performUnlock(key: key) }
+            } else if response == .alertSecondButtonReturn {
+                self.buyLicense()
+            }
+        }
+
+        if let window = view.window {
+            alert.beginSheetModal(for: window, completionHandler: handleResponse)
+        } else {
+            let response = alert.runModal()
+            handleResponse(response)
+        }
+
         return false
     }
     
@@ -639,18 +596,34 @@ final class PopoverViewController: NSViewController {
         guard let key = licenseTextField?.stringValue.trimmingCharacters(in: .whitespacesAndNewlines), !key.isEmpty else { return }
         
         licenseTextField?.isEnabled = false
+        licenseErrorLabel?.isHidden = true
+
+        DiagnosticsManager.shared.log("performUnlock invoked")
+        NSLog("CloudBoost performUnlock invoked")
+        performUnlock(key: key)
+    }
+
+    private func performUnlock(key: String) {
         ProManager.shared.validateLicense(key: key) { [weak self] success, errorMsg in
             guard let self = self else { return }
-            self.licenseTextField?.isEnabled = true
-            
-            if success {
-                self.dismissOverlay()
-            } else {
+
+            DispatchQueue.main.async {
                 let alert = NSAlert()
-                alert.messageText = "Validation Failed"
-                alert.informativeText = errorMsg ?? "Invalid License Key."
-                alert.alertStyle = .warning
-                alert.beginSheetModal(for: self.view.window!)
+                alert.messageText = success ? "Unlocked" : "License Error"
+                alert.informativeText = success ? "Success! CloudBoost PRO is now unlocked." : (errorMsg ?? "Invalid License Key.")
+                alert.alertStyle = success ? .informational : .warning
+                alert.addButton(withTitle: "OK")
+
+                if let window = self.view.window {
+                    alert.beginSheetModal(for: window, completionHandler: nil)
+                } else {
+                    alert.runModal()
+                }
+
+                if success {
+                    self.dismissOverlay()
+                    self.refreshAll()
+                }
             }
         }
     }
@@ -663,6 +636,8 @@ final class PopoverViewController: NSViewController {
     
     @objc private func dismissOverlay() {
         guard let overlay = licenseOverlay else { return }
+        DiagnosticsManager.shared.log("dismissOverlay invoked")
+        NSLog("CloudBoost dismissOverlay invoked")
         NSAnimationContext.runAnimationGroup({ ctx in
             ctx.duration = 0.2
             overlay.animator().alphaValue = 0
@@ -841,7 +816,36 @@ final class PopoverViewController: NSViewController {
     }
 
     private func appVersion() -> String {
-        Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "—"
+        if let v = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String,
+           !v.isEmpty {
+            return v
+        }
+
+        if let v = readRepoReleaseVersion() {
+            return v
+        }
+
+        return "DEV"
+    }
+
+    private func readRepoReleaseVersion() -> String? {
+        let cwd = FileManager.default.currentDirectoryPath
+        let candidates = [
+            "\(cwd)/.release/CloudBoost.app/Contents/Info.plist",
+            "\(cwd)/CloudBoost.app/Contents/Info.plist"
+        ]
+
+        for path in candidates {
+            guard let data = try? Data(contentsOf: URL(fileURLWithPath: path)) else { continue }
+            if let plist = try? PropertyListSerialization.propertyList(from: data, options: [], format: nil),
+               let dict = plist as? [String: Any],
+               let v = dict["CFBundleShortVersionString"] as? String,
+               !v.isEmpty {
+                return v
+            }
+        }
+
+        return nil
     }
 }
 
