@@ -1,16 +1,16 @@
 CloudBoost is a native macOS menu bar utility written in Swift, focused on optimizing macOS in real-time to reduce micro-stutters, ping spikes, and input lag during cloud gaming sessions.
 
-### 🚀 What's New in 3.0.2 (FINAL)
-* **License Validation Fix:** Fixed Gumroad API compatibility by transitioning to `product_id`.
-* **macOS Monterey Support:** Fixed a compiler SDK linking issue. CloudBoost is now fully backwards compatible and officially supports macOS 12.0+ out of the box.
-* **UI/UX Redesign:** Complete overhaul of the popover menu. Features a new centralized layout, modern card-based sections, and dedicated action buttons for a truly native Apple-like feel.
-* **Security & Stability:** Hardened Keychain validation and modular architecture improvements for faster performance.
+### 🚀 What's New in 3.0.3
+* **Universal Binary (Apple Silicon + Intel):** Official support for Intel processors via Rosetta 2 and Apple Silicon (M1/M2/M3) natively, fully resolving the startup bug on macOS Monterey (Intel).
+* **HUD Monitor Fixes:** Fixed a shell formatting issue that prevented the HUD from reading the CPU priority (`nice`) and CPU usage in real time.
+* **macOS Monterey Validation:** Fixed missing `Info.plist` structural keys that caused strict Gatekeeper validations on older macOS 12 to reject the bundle as "unsupported".
+* **Version Cache Accuracy:** The popover now accurately resolves its bundle version when installed via `/Applications`.
 
 ---
 
 ### 📥 Installation
 
-1. Go to the **Assets** section below and download the latest **CloudBoost_v3.0.2.dmg** file.
+1. Go to the **Assets** section below and download the latest **CloudBoost_v3.0.3.dmg** file.
 2. Open the `.dmg` and drag **CloudBoost.app** to your `/Applications` folder.
 
 > **⚠️ Note on macOS Gatekeeper:**
@@ -47,4 +47,4 @@ To unlock advanced features (like Auto-Detect, Keep Alive, and Extreme Presets):
 2. The activation code will be sent to your email.
 3. In CloudBoost, click on the **Buy PRO** button (or any locked feature) and enter the key to validate the license locally.
 
-`[MIN_VERSION: 3.0.2]`
+`[MIN_VERSION: 3.0.3]`

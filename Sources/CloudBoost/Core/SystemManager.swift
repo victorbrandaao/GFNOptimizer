@@ -219,12 +219,16 @@ final class SystemManager {
     }
 
     func readCpuUsage(pid: String) -> String? {
-        let v = runShell("ps -p \(shellQuote(pid)) -o %cpu= | tr -d ' '")
+        let safePid = pid.filter { $0.isNumber }
+        guard !safePid.isEmpty else { return nil }
+        let v = runShell("ps -p \(safePid) -o %cpu= | tr -d ' '")
         return v.isEmpty ? nil : v
     }
 
     func readNiceValue(pid: String) -> String? {
-        let v = runShell("ps -p \(shellQuote(pid)) -o nice= | tr -d ' '")
+        let safePid = pid.filter { $0.isNumber }
+        guard !safePid.isEmpty else { return nil }
+        let v = runShell("ps -p \(safePid) -o nice= | tr -d ' '")
         return v.isEmpty ? nil : v
     }
 

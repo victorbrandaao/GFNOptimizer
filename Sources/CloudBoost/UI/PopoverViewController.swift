@@ -997,6 +997,8 @@ final class PopoverViewController: NSViewController {
         if let v = cachedVersion { return v }
         let cwd = FileManager.default.currentDirectoryPath
         let candidates = [
+            "/Applications/CloudBoost.app/Contents/Info.plist",
+            (Bundle.main.bundlePath as NSString).appendingPathComponent("Contents/Info.plist"),
             "\(cwd)/CloudBoost/Info.plist",
             "\(cwd)/.release/CloudBoost.app/Contents/Info.plist",
             "\(cwd)/CloudBoost.app/Contents/Info.plist"
@@ -1012,7 +1014,7 @@ final class PopoverViewController: NSViewController {
                 return v
             }
         }
-        cachedVersion = "3.0.1"
-        return "3.0.1"
+        cachedVersion = "3.0.2"
+        return "3.0.2"
     }
 }
