@@ -4,31 +4,38 @@ import Security
 final class KeychainHelper {
     static let shared = KeychainHelper()
     private init() {}
-    
-    func save(_ data: Data, service: String, account: String) {
+
+    @discardableResult
+    func save(_ data: Data, service: String, account: String) -> Bool {
         let query = [
             kSecValueData: data,
             kSecAttrService: service,
             kSecAttrAccount: account,
             kSecClass: kSecClassGenericPassword
         ] as CFDictionary
-        
-        // Add item in keychain
+
         let status = SecItemAdd(query, nil)
-        
+
         if status == errSecDuplicateItem {
-            // Item already exist, thus update it.
-            let query = [
+            let searchQuery = [
                 kSecAttrService: service,
                 kSecAttrAccount: account,
                 kSecClass: kSecClassGenericPassword
             ] as CFDictionary
-            
-            let attributesToUpdate = [kSecValueData: data] as CFDictionary
-            SecItemUpdate(query, attributesToUpdate)
+            let attrs = [kSecValueData: data] as CFDictionary
+            let updateStatus = SecItemUpdate(searchQuery, attrs)
+            if updateStatus != errSecSuccess {
+                DiagnosticsManager.shared.log("Keychain update failed: \(updateStatus)")
+            }
+            return updateStatus == errSecSuccess
         }
+
+        if status != errSecSuccess {
+            DiagnosticsManager.shared.log("Keychain save failed: \(status)")
+        }
+        return status == errSecSuccess
     }
-    
+
     func read(service: String, account: String) -> Data? {
         let query = [
             kSecAttrService: service,
@@ -36,20 +43,29 @@ final class KeychainHelper {
             kSecClass: kSecClassGenericPassword,
             kSecReturnData: true
         ] as CFDictionary
-        
+
         var result: AnyObject?
-        SecItemCopyMatching(query, &result)
-        
+        let status = SecItemCopyMatching(query, &result)
+
+        if status != errSecSuccess, status != errSecItemNotFound {
+            DiagnosticsManager.shared.log("Keychain read failed: \(status)")
+        }
+
         return result as? Data
     }
-    
-    func delete(service: String, account: String) {
+
+    @discardableResult
+    func delete(service: String, account: String) -> Bool {
         let query = [
             kSecAttrService: service,
             kSecAttrAccount: account,
             kSecClass: kSecClassGenericPassword
         ] as CFDictionary
-        
-        SecItemDelete(query)
+
+        let status = SecItemDelete(query)
+        if status != errSecSuccess, status != errSecItemNotFound {
+            DiagnosticsManager.shared.log("Keychain delete failed: \(status)")
+        }
+        return status == errSecSuccess || status == errSecItemNotFound
     }
 }

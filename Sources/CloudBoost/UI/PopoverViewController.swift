@@ -10,6 +10,7 @@ final class PopoverViewController: NSViewController {
 
     private final class GradientButton: NSButton {
         private let gradientLayer = CAGradientLayer()
+        private var pulseLayer: CAGradientLayer?
 
         var isActiveState: Bool = false { didSet { refreshAppearance() } }
         var isLoadingState: Bool = false {
@@ -27,6 +28,7 @@ final class PopoverViewController: NSViewController {
             gradientLayer.startPoint = CGPoint(x: 0, y: 0.5)
             gradientLayer.endPoint   = CGPoint(x: 1, y: 0.5)
             layer?.insertSublayer(gradientLayer, at: 0)
+            setAccessibilityLabel("Toggle CloudBoost")
             refreshAppearance()
         }
 
@@ -35,6 +37,7 @@ final class PopoverViewController: NSViewController {
             CATransaction.begin()
             CATransaction.setDisableActions(true)
             gradientLayer.frame = bounds
+            pulseLayer?.frame = bounds
             CATransaction.commit()
         }
 
@@ -47,8 +50,8 @@ final class PopoverViewController: NSViewController {
                 start = NSColor(calibratedRed: 0.88, green: 0.14, blue: 0.19, alpha: 1)
                 end   = NSColor(calibratedRed: 0.65, green: 0.08, blue: 0.13, alpha: 1)
             } else {
-                start = NSColor(calibratedRed: 0.00, green: 0.72, blue: 0.43, alpha: 1)
-                end   = NSColor(calibratedRed: 0.00, green: 0.50, blue: 0.84, alpha: 1)
+                start = NSColor(calibratedRed: 0.08, green: 0.68, blue: 0.45, alpha: 1)
+                end   = NSColor(calibratedRed: 0.05, green: 0.48, blue: 0.82, alpha: 1)
             }
             gradientLayer.colors = [start.cgColor, end.cgColor]
 
@@ -58,20 +61,56 @@ final class PopoverViewController: NSViewController {
             else                   { label = "⚡  Enable CloudBoost" }
 
             attributedTitle = NSAttributedString(string: label, attributes: [
-                .foregroundColor: NSColor.white.withAlphaComponent(isLoadingState ? 0.55 : 1.0),
+                .foregroundColor: NSColor.white.withAlphaComponent(isLoadingState ? 0.5 : 1.0),
                 .font: NSFont.systemFont(ofSize: 13, weight: .semibold)
             ])
+
+            if isActiveState, !isLoadingState {
+                startPulse()
+            } else {
+                stopPulse()
+            }
+        }
+
+        private func startPulse() {
+            guard pulseLayer == nil else { return }
+            let p = CAGradientLayer()
+            p.startPoint = CGPoint(x: 0, y: 0.5)
+            p.endPoint   = CGPoint(x: 1, y: 0.5)
+            p.colors = [
+                NSColor(calibratedRed: 1.0, green: 0.3, blue: 0.3, alpha: 0.25).cgColor,
+                NSColor(calibratedRed: 0.8, green: 0.15, blue: 0.2, alpha: 0.15).cgColor
+            ]
+            p.frame = bounds
+            p.opacity = 0
+            layer?.addSublayer(p)
+            pulseLayer = p
+
+            let anim = CABasicAnimation(keyPath: "opacity")
+            anim.fromValue   = 0.0
+            anim.toValue     = 1.0
+            anim.duration    = 1.4
+            anim.autoreverses = true
+            anim.repeatCount = .infinity
+            anim.timingFunction = CAMediaTimingFunction(name: .easeInEaseOut)
+            p.add(anim, forKey: "pulse")
+        }
+
+        private func stopPulse() {
+            pulseLayer?.removeAllAnimations()
+            pulseLayer?.removeFromSuperlayer()
+            pulseLayer = nil
         }
     }
 
     // MARK: - Nested: HoverButton
-    
+
     private final class HoverButton: NSButton {
         private var trackingArea: NSTrackingArea?
         var normalBgColor: NSColor? { didSet { layer?.backgroundColor = normalBgColor?.cgColor } }
         var hoverBgColor: NSColor?
         var isLockedState: Bool = false
-        
+
         override func updateTrackingAreas() {
             super.updateTrackingAreas()
             if let ta = trackingArea { removeTrackingArea(ta) }
@@ -79,41 +118,45 @@ final class PopoverViewController: NSViewController {
             trackingArea = NSTrackingArea(rect: bounds, options: options, owner: self, userInfo: nil)
             addTrackingArea(trackingArea!)
         }
-        
+
         override func mouseEntered(with event: NSEvent) {
             super.mouseEntered(with: event)
             guard isEnabled, !isLockedState, let h = hoverBgColor else { return }
             NSAnimationContext.runAnimationGroup { ctx in
-                ctx.duration = 0.15
+                ctx.duration = 0.12
                 self.animator().layer?.backgroundColor = h.cgColor
             }
         }
-        
+
         override func mouseExited(with event: NSEvent) {
             super.mouseExited(with: event)
             guard let n = normalBgColor else { return }
             NSAnimationContext.runAnimationGroup { ctx in
-                ctx.duration = 0.2
+                ctx.duration = 0.18
                 self.animator().layer?.backgroundColor = n.cgColor
             }
         }
     }
 
-    // MARK: - Nested: gradient boost button
+    // MARK: - Color palette
 
     private enum Palette {
-        static let green        = NSColor(calibratedRed: 0.00, green: 0.85, blue: 0.51, alpha: 1.0)
-        static let card         = NSColor(calibratedRed: 0.17, green: 0.17, blue: 0.21, alpha: 1.0)
-        static let cardSelected = NSColor(calibratedRed: 0.00, green: 0.43, blue: 0.85, alpha: 0.28)
-        static let separator    = NSColor(calibratedRed: 0.22, green: 0.22, blue: 0.28, alpha: 1.0)
-        static let muted        = NSColor(calibratedRed: 0.45, green: 0.45, blue: 0.52, alpha: 1.0)
-        static let blue         = NSColor(calibratedRed: 0.25, green: 0.58, blue: 1.00, alpha: 1.0)
+        static let green        = NSColor(calibratedRed: 0.16, green: 0.84, blue: 0.54, alpha: 1.0)
+        static let card         = NSColor(calibratedRed: 0.13, green: 0.13, blue: 0.16, alpha: 1.0)
+        static let cardHover    = NSColor(calibratedRed: 0.18, green: 0.18, blue: 0.22, alpha: 1.0)
+        static let cardSelected = NSColor(calibratedRed: 0.10, green: 0.28, blue: 0.52, alpha: 0.40)
+        static let separator    = NSColor(calibratedRed: 1.0, green: 1.0, blue: 1.0, alpha: 0.08)
+        static let muted        = NSColor(calibratedRed: 0.50, green: 0.50, blue: 0.56, alpha: 1.0)
+        static let textSecondary = NSColor(calibratedRed: 0.68, green: 0.68, blue: 0.72, alpha: 1.0)
+        static let blue         = NSColor(calibratedRed: 0.35, green: 0.60, blue: 1.00, alpha: 1.0)
+        static let bg           = NSColor(calibratedRed: 0.10, green: 0.10, blue: 0.12, alpha: 1.0)
     }
 
     // MARK: - State
 
     private var isBoosterActive  = false
     private var selectedPlatform: CloudPlatform = .geforceNow
+    private var cachedVersion: String?
 
     // MARK: - Callbacks (set by AppDelegate)
 
@@ -139,19 +182,19 @@ final class PopoverViewController: NSViewController {
     private var niceStat:          NSTextField!
     private var boostButton:       GradientButton!
     private var platformButtons:   [CloudPlatform: NSButton] = [:]
-    private var presetControl:     NSSegmentedControl!
+    private var presetButtons:     [PresetName: HoverButton] = [:]
     private var autoDetectSwitch:  NSSwitch!
     private var hudSwitch:         NSSwitch!
     private var notifSwitch:       NSSwitch!
     private var keepAliveSwitch:   NSSwitch!
-    
+
     private var autoDetectLabel:   NSTextField?
     private var keepAliveLabel:    NSTextField?
 
     // MARK: - Lifecycle
 
     override func loadView() {
-        let root = NSVisualEffectView(frame: NSRect(x: 0, y: 0, width: 320, height: 548))
+        let root = NSVisualEffectView(frame: NSRect(x: 0, y: 0, width: 320, height: 560))
         root.material     = .hudWindow
         root.blendingMode = .behindWindow
         root.state        = .active
@@ -160,7 +203,7 @@ final class PopoverViewController: NSViewController {
         let stack = NSStackView()
         stack.orientation = .vertical
         stack.spacing     = 0
-        stack.alignment   = .leading
+        stack.alignment   = .centerX
         stack.translatesAutoresizingMaskIntoConstraints = false
         root.addSubview(stack)
 
@@ -168,6 +211,7 @@ final class PopoverViewController: NSViewController {
             stack.leadingAnchor.constraint(equalTo: root.leadingAnchor),
             stack.trailingAnchor.constraint(equalTo: root.trailingAnchor),
             stack.topAnchor.constraint(equalTo: root.topAnchor),
+            stack.bottomAnchor.constraint(equalTo: root.bottomAnchor)
         ])
 
         stack.addArrangedSubview(buildHeader())
@@ -184,17 +228,17 @@ final class PopoverViewController: NSViewController {
         stack.addArrangedSubview(hairline())
         stack.addArrangedSubview(buildFooter())
 
-        preferredContentSize = NSSize(width: 320, height: 548)
+        preferredContentSize = NSSize(width: 320, height: 560)
     }
 
     override func viewWillAppear() {
         super.viewWillAppear()
         syncSwitches()
         refreshAll()
-        
+
         NotificationCenter.default.addObserver(self, selector: #selector(refreshAll), name: .proStatusChanged, object: nil)
     }
-    
+
     override func viewDidDisappear() {
         super.viewDidDisappear()
         NotificationCenter.default.removeObserver(self, name: .proStatusChanged, object: nil)
@@ -203,34 +247,36 @@ final class PopoverViewController: NSViewController {
     // MARK: - Section builders
 
     private func buildHeader() -> NSView {
-        let container = fixedHeight(56)
+        let container = fixedHeight(58)
+        container.widthAnchor.constraint(equalToConstant: 320).isActive = true
 
         let iconConfig = NSImage.SymbolConfiguration(pointSize: 18, weight: .semibold)
         let iconView   = NSImageView()
         iconView.image = NSImage(systemSymbolName: "cloud.fill",
-                                 accessibilityDescription: nil)?
+                                 accessibilityDescription: "CloudBoost")?
                                 .withSymbolConfiguration(iconConfig)
         iconView.contentTintColor = .white
         iconView.translatesAutoresizingMaskIntoConstraints = false
         headerIconView = iconView
 
         let appLabel = label("CloudBoost", size: 14, weight: .bold, color: .white)
-        let verLabel = label(appVersion(), size: 10, weight: .regular, color: Palette.muted)
+        let verLabel = label("v\(resolveVersion())", size: 10, weight: .medium, color: Palette.muted)
         let titleStack = NSStackView(views: [appLabel, verLabel])
         titleStack.orientation = .vertical
-        titleStack.spacing     = 1
+        titleStack.spacing     = 2
         titleStack.alignment   = .leading
         titleStack.translatesAutoresizingMaskIntoConstraints = false
 
         // Status pill
         let pill = NSView()
         pill.wantsLayer              = true
-        pill.layer?.cornerRadius     = 9
+        pill.layer?.cornerRadius     = 10
         pill.layer?.backgroundColor  = Palette.card.cgColor
         pill.translatesAutoresizingMaskIntoConstraints = false
         statusPillView = pill
 
-        let pillText = label("OFFLINE", size: 10, weight: .bold, color: Palette.muted)
+        let pillText = label("OFFLINE", size: 9, weight: .bold, color: Palette.muted)
+        pillText.alignment = .center
         pillText.translatesAutoresizingMaskIntoConstraints = false
         statusPillLabel = pillText
         pill.addSubview(pillText)
@@ -239,9 +285,9 @@ final class PopoverViewController: NSViewController {
             pillText.centerXAnchor.constraint(equalTo: pill.centerXAnchor),
             pillText.centerYAnchor.constraint(equalTo: pill.centerYAnchor),
             pill.heightAnchor.constraint(equalToConstant: 22),
-            pill.widthAnchor.constraint(greaterThanOrEqualToConstant: 78),
-            pillText.leadingAnchor.constraint(equalTo: pill.leadingAnchor, constant: 9),
-            pillText.trailingAnchor.constraint(equalTo: pill.trailingAnchor, constant: -9),
+            pill.widthAnchor.constraint(greaterThanOrEqualToConstant: 80),
+            pillText.leadingAnchor.constraint(equalTo: pill.leadingAnchor, constant: 10),
+            pillText.trailingAnchor.constraint(equalTo: pill.trailingAnchor, constant: -10),
         ])
 
         container.addSubview(iconView)
@@ -249,14 +295,14 @@ final class PopoverViewController: NSViewController {
         container.addSubview(pill)
 
         NSLayoutConstraint.activate([
-            iconView.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: 14),
+            iconView.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: 16),
             iconView.centerYAnchor.constraint(equalTo: container.centerYAnchor),
             iconView.widthAnchor.constraint(equalToConstant: 22),
 
-            titleStack.leadingAnchor.constraint(equalTo: iconView.trailingAnchor, constant: 9),
+            titleStack.leadingAnchor.constraint(equalTo: iconView.trailingAnchor, constant: 10),
             titleStack.centerYAnchor.constraint(equalTo: container.centerYAnchor),
 
-            pill.trailingAnchor.constraint(equalTo: container.trailingAnchor, constant: -14),
+            pill.trailingAnchor.constraint(equalTo: container.trailingAnchor, constant: -16),
             pill.centerYAnchor.constraint(equalTo: container.centerYAnchor),
         ])
 
@@ -264,15 +310,16 @@ final class PopoverViewController: NSViewController {
     }
 
     private func buildPlatformSection() -> NSView {
-        let outer = vstack(insets: NSEdgeInsets(top: 10, left: 14, bottom: 8, right: 14), spacing: 7)
+        let outer = vstack(insets: NSEdgeInsets(top: 10, left: 16, bottom: 8, right: 16), spacing: 8)
 
         outer.addArrangedSubview(sectionLabel("PLATFORM"))
 
         let row = NSStackView()
         row.orientation  = .horizontal
         row.distribution = .fillEqually
-        row.spacing      = 5
+        row.spacing      = 6
         row.translatesAutoresizingMaskIntoConstraints = false
+        row.widthAnchor.constraint(equalToConstant: 288).isActive = true
 
         for platform in CloudPlatform.allCases {
             let btn = makePlatformCard(platform)
@@ -288,9 +335,13 @@ final class PopoverViewController: NSViewController {
         openBtn.attributedTitle = NSAttributedString(
             string: "↗  Open selected platform",
             attributes: [.foregroundColor: Palette.blue,
-                         .font: NSFont.systemFont(ofSize: 11)]
+                         .font: NSFont.systemFont(ofSize: 11, weight: .medium)]
         )
-        outer.addArrangedSubview(openBtn)
+        openBtn.setAccessibilityLabel("Open selected platform in browser or app")
+        
+        let centerWrapper = NSStackView(views: [openBtn])
+        centerWrapper.alignment = .centerX
+        outer.addArrangedSubview(centerWrapper)
 
         return outer
     }
@@ -300,11 +351,11 @@ final class PopoverViewController: NSViewController {
         btn.isBordered = false
         btn.wantsLayer = true
         btn.layer?.cornerRadius    = 8
-        
+
         btn.normalBgColor = Palette.card
-        btn.hoverBgColor  = NSColor(calibratedRed: 0.22, green: 0.22, blue: 0.28, alpha: 1.0)
-        
-        let cfg = NSImage.SymbolConfiguration(pointSize: 15, weight: .medium)
+        btn.hoverBgColor  = Palette.cardHover
+
+        let cfg = NSImage.SymbolConfiguration(pointSize: 14, weight: .medium)
         if let img = NSImage(systemSymbolName: platform.iconSymbol,
                              accessibilityDescription: nil)?
                              .withSymbolConfiguration(cfg) {
@@ -313,14 +364,15 @@ final class PopoverViewController: NSViewController {
         }
         btn.attributedTitle = NSAttributedString(
             string: platform.shortName,
-            attributes: [.foregroundColor: NSColor(white: 0.68, alpha: 1),
-                         .font: NSFont.systemFont(ofSize: 8.5, weight: .semibold)]
+            attributes: [.foregroundColor: Palette.textSecondary,
+                         .font: NSFont.systemFont(ofSize: 9, weight: .semibold)]
         )
-        btn.contentTintColor = NSColor(white: 0.78, alpha: 1)
+        btn.contentTintColor = NSColor(white: 0.72, alpha: 1)
         btn.identifier       = NSUserInterfaceItemIdentifier(platform.rawValue)
         btn.target           = self
         btn.action           = #selector(platformCardClicked(_:))
-        btn.heightAnchor.constraint(equalToConstant: 56).isActive = true
+        btn.heightAnchor.constraint(equalToConstant: 58).isActive = true
+        btn.setAccessibilityLabel("Select \(platform.rawValue)")
         return btn
     }
 
@@ -329,41 +381,78 @@ final class PopoverViewController: NSViewController {
         row.orientation  = .horizontal
         row.distribution = .fillEqually
         row.spacing      = 6
-        row.edgeInsets   = NSEdgeInsets(top: 8, left: 14, bottom: 8, right: 14)
+        row.edgeInsets   = NSEdgeInsets(top: 8, left: 16, bottom: 8, right: 16)
         row.translatesAutoresizingMaskIntoConstraints = false
+        row.widthAnchor.constraint(equalToConstant: 320).isActive = true
 
-        cpuStat  = statLabel("CPU —")
-        pingStat = statLabel("⚡ —")
-        niceStat = statLabel("n —")
+        cpuStat  = statLabel("—")
+        pingStat = statLabel("—")
+        niceStat = statLabel("—")
 
-        for stat in [cpuStat!, pingStat!, niceStat!] {
+        let configs: [(NSTextField, String, String)] = [
+            (cpuStat,  "cpu",          "CPU"),
+            (pingStat, "bolt.fill",    "PING"),
+            (niceStat, "dial.low",     "NICE"),
+        ]
+
+        for (stat, icon, title) in configs {
             let card = NSView()
             card.wantsLayer = true
-            card.layer?.cornerRadius    = 6
+            card.layer?.cornerRadius    = 8
             card.layer?.backgroundColor = Palette.card.cgColor
             card.translatesAutoresizingMaskIntoConstraints = false
-            card.heightAnchor.constraint(equalToConstant: 28).isActive = true
+            card.heightAnchor.constraint(equalToConstant: 36).isActive = true
+
+            // Icon
+            let iconCfg = NSImage.SymbolConfiguration(pointSize: 9, weight: .medium)
+            let iconView = NSImageView()
+            iconView.image = NSImage(systemSymbolName: icon, accessibilityDescription: nil)?
+                                    .withSymbolConfiguration(iconCfg)
+            iconView.contentTintColor = Palette.muted
+            iconView.translatesAutoresizingMaskIntoConstraints = false
+
+            // Title
+            let titleLabel = label(title, size: 8, weight: .bold, color: Palette.muted)
+            titleLabel.alignment = .center
+            titleLabel.translatesAutoresizingMaskIntoConstraints = false
+
+            // Value
+            stat.alignment = .center
             stat.translatesAutoresizingMaskIntoConstraints = false
-            card.addSubview(stat)
+
+            let innerStack = NSStackView(views: [titleLabel, stat])
+            innerStack.orientation = .horizontal
+            innerStack.spacing = 4
+            innerStack.alignment = .centerY
+            innerStack.translatesAutoresizingMaskIntoConstraints = false
+
+            card.addSubview(iconView)
+            card.addSubview(innerStack)
+            
             NSLayoutConstraint.activate([
-                stat.centerXAnchor.constraint(equalTo: card.centerXAnchor),
-                stat.centerYAnchor.constraint(equalTo: card.centerYAnchor),
+                iconView.leadingAnchor.constraint(equalTo: card.leadingAnchor, constant: 10),
+                iconView.centerYAnchor.constraint(equalTo: card.centerYAnchor),
+                innerStack.centerXAnchor.constraint(equalTo: card.centerXAnchor, constant: 8),
+                innerStack.centerYAnchor.constraint(equalTo: card.centerYAnchor)
             ])
+
+            stat.setAccessibilityLabel("\(title) statistic")
             row.addArrangedSubview(card)
         }
         return row
     }
 
     private func buildBoostSection() -> NSView {
-        let container = fixedHeight(60)
+        let container = fixedHeight(58)
+        container.widthAnchor.constraint(equalToConstant: 320).isActive = true
         boostButton = GradientButton(frame: .zero)
         boostButton.translatesAutoresizingMaskIntoConstraints = false
         boostButton.target = self
         boostButton.action = #selector(boostClicked)
         container.addSubview(boostButton)
         NSLayoutConstraint.activate([
-            boostButton.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: 14),
-            boostButton.trailingAnchor.constraint(equalTo: container.trailingAnchor, constant: -14),
+            boostButton.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: 16),
+            boostButton.trailingAnchor.constraint(equalTo: container.trailingAnchor, constant: -16),
             boostButton.centerYAnchor.constraint(equalTo: container.centerYAnchor),
             boostButton.heightAnchor.constraint(equalToConstant: 42),
         ])
@@ -371,28 +460,53 @@ final class PopoverViewController: NSViewController {
     }
 
     private func buildPresetSection() -> NSView {
+        let outer = vstack(insets: NSEdgeInsets(top: 10, left: 16, bottom: 10, right: 16), spacing: 8)
+        outer.addArrangedSubview(sectionLabel("PRESET"))
+
         let row = NSStackView()
-        row.orientation = .horizontal
-        row.spacing     = 8
-        row.alignment   = .centerY
-        row.edgeInsets  = NSEdgeInsets(top: 10, left: 14, bottom: 10, right: 14)
+        row.orientation  = .horizontal
+        row.distribution = .fillEqually
+        row.spacing      = 6
         row.translatesAutoresizingMaskIntoConstraints = false
-
-        row.addArrangedSubview(sectionLabel("PRESET"))
-
-        let spacer = NSView()
-        spacer.setContentHuggingPriority(.defaultLow, for: .horizontal)
-        row.addArrangedSubview(spacer)
+        row.widthAnchor.constraint(equalToConstant: 288).isActive = true
 
         let isPro = ProManager.shared.isProUnlocked
-        let labels = PresetName.allCases.map { $0.isPro && !isPro ? "\($0.shortLabel) 🔒" : $0.shortLabel }
-        presetControl = NSSegmentedControl(labels: labels, trackingMode: .selectOne,
-                                           target: self, action: #selector(presetChanged(_:)))
-        presetControl.controlSize      = .small
-        presetControl.selectedSegment  = PresetName.allCases.firstIndex(of: Preferences.selectedPreset) ?? 0
-        row.addArrangedSubview(presetControl)
+        for preset in PresetName.allCases {
+            let btn = makePresetPill(preset, isPro: isPro)
+            presetButtons[preset] = btn
+            row.addArrangedSubview(btn)
+        }
 
-        return row
+        outer.addArrangedSubview(row)
+        return outer
+    }
+
+    private func makePresetPill(_ preset: PresetName, isPro: Bool) -> HoverButton {
+        let btn = HoverButton(frame: .zero)
+        btn.isBordered = false
+        btn.wantsLayer = true
+        btn.layer?.cornerRadius = 7
+
+        btn.normalBgColor = Palette.card
+        btn.hoverBgColor  = Palette.cardHover
+
+        let isLocked = preset.isPro && !isPro
+        var title = preset.rawValue
+        if isLocked { title += " 🔒" }
+
+        btn.attributedTitle = NSAttributedString(
+            string: title,
+            attributes: [
+                .foregroundColor: Palette.textSecondary,
+                .font: NSFont.systemFont(ofSize: 11, weight: .medium)
+            ]
+        )
+        btn.heightAnchor.constraint(equalToConstant: 28).isActive = true
+        btn.target = self
+        btn.action = #selector(presetPillClicked(_:))
+        btn.identifier = NSUserInterfaceItemIdentifier(preset.rawValue)
+        btn.setAccessibilityLabel("Preset: \(preset.rawValue)")
+        return btn
     }
 
     private func buildSettingsSection() -> NSView {
@@ -401,24 +515,59 @@ final class PopoverViewController: NSViewController {
         notifSwitch      = makeSwitch(Preferences.notificationsEnabled, action: #selector(notifToggled))
         keepAliveSwitch  = makeSwitch(Preferences.keepAliveEnabled,  action: #selector(keepAliveToggled))
 
-        let outer = vstack(insets: NSEdgeInsets(top: 8, left: 14, bottom: 10, right: 14), spacing: 2)
+        let outer = vstack(insets: NSEdgeInsets(top: 8, left: 16, bottom: 8, right: 16), spacing: 6)
         outer.addArrangedSubview(sectionLabel("SETTINGS"))
+
+        let card = NSView()
+        card.wantsLayer = true
+        card.layer?.cornerRadius    = 10
+        card.layer?.backgroundColor = Palette.card.cgColor
+        card.translatesAutoresizingMaskIntoConstraints = false
+        card.widthAnchor.constraint(equalToConstant: 288).isActive = true
 
         let isPro = ProManager.shared.isProUnlocked
         let rows: [(String, String, NSSwitch)] = [
             ("Auto-detect Platform" + (isPro ? "" : " 🔒"), "wand.and.stars",  autoDetectSwitch),
-            ("HUD Overlay",          "gauge",            hudSwitch),
+            ("HUD Overlay",          "gauge.open.with.lines.needle.33percent", hudSwitch),
             ("Notifications",        "bell.badge",       notifSwitch),
             ("Keep Alive" + (isPro ? "" : " 🔒"),           "timer",            keepAliveSwitch),
         ]
+
+        let cardStack = NSStackView()
+        cardStack.orientation = .vertical
+        cardStack.spacing     = 0
+        cardStack.alignment   = .centerX
+        cardStack.translatesAutoresizingMaskIntoConstraints = false
+
         var rowIndex = 0
         for (title, icon, toggle) in rows {
             let rowView = toggleRow(title: title, icon: icon, toggle: toggle)
-            outer.addArrangedSubview(rowView.view)
+
             if rowIndex == 0 { autoDetectLabel = rowView.label }
             if rowIndex == 3 { keepAliveLabel = rowView.label }
+
+            cardStack.addArrangedSubview(rowView.view)
+
+            if rowIndex < rows.count - 1 {
+                let sep = NSView()
+                sep.wantsLayer = true
+                sep.layer?.backgroundColor = Palette.separator.cgColor
+                sep.translatesAutoresizingMaskIntoConstraints = false
+                sep.heightAnchor.constraint(equalToConstant: 1).isActive = true
+                sep.widthAnchor.constraint(equalToConstant: 264).isActive = true
+                cardStack.addArrangedSubview(sep)
+            }
             rowIndex += 1
         }
+
+        card.addSubview(cardStack)
+        NSLayoutConstraint.activate([
+            cardStack.topAnchor.constraint(equalTo: card.topAnchor, constant: 4),
+            cardStack.bottomAnchor.constraint(equalTo: card.bottomAnchor, constant: -4),
+            cardStack.centerXAnchor.constraint(equalTo: card.centerXAnchor)
+        ])
+
+        outer.addArrangedSubview(card)
         return outer
     }
 
@@ -427,8 +576,10 @@ final class PopoverViewController: NSViewController {
         row.orientation = .horizontal
         row.spacing     = 8
         row.alignment   = .centerY
+        row.edgeInsets  = NSEdgeInsets(top: 0, left: 12, bottom: 0, right: 12)
         row.translatesAutoresizingMaskIntoConstraints = false
-        row.heightAnchor.constraint(equalToConstant: 30).isActive = true
+        row.heightAnchor.constraint(equalToConstant: 32).isActive = true
+        row.widthAnchor.constraint(equalToConstant: 288).isActive = true
 
         let iconCfg = NSImage.SymbolConfiguration(pointSize: 11, weight: .medium)
         let iconImg = NSImageView()
@@ -442,6 +593,9 @@ final class PopoverViewController: NSViewController {
         let spacer = NSView()
         spacer.setContentHuggingPriority(.defaultLow, for: .horizontal)
 
+        toggle.controlSize = .small
+        toggle.setAccessibilityLabel(title)
+
         row.addArrangedSubview(iconImg)
         row.addArrangedSubview(lbl)
         row.addArrangedSubview(spacer)
@@ -454,14 +608,22 @@ final class PopoverViewController: NSViewController {
         row.orientation  = .horizontal
         row.distribution = .fillEqually
         row.spacing      = 6
-        row.edgeInsets   = NSEdgeInsets(top: 8, left: 14, bottom: 14, right: 14)
+        row.edgeInsets   = NSEdgeInsets(top: 8, left: 16, bottom: 12, right: 16)
         row.translatesAutoresizingMaskIntoConstraints = false
+        row.widthAnchor.constraint(equalToConstant: 320).isActive = true
 
-        let items: [(String, String, Selector)] = [
-            ("Diagnostics",   "doc.text",          #selector(exportClicked)),
-            ("Check Update",  "arrow.down.circle",  #selector(updateClicked)),
-            ("Quit",          "power",              #selector(quitClicked)),
+        let isPro = ProManager.shared.isProUnlocked
+        var items: [(String, String, Selector)] = [
+            ("Update",  "arrow.down.circle",  #selector(updateClicked)),
+            ("Quit",    "power",              #selector(quitClicked)),
         ]
+        
+        if !isPro {
+            items.insert(("Buy PRO", "star.fill", #selector(buyLicense)), at: 0)
+        } else {
+            items.insert(("Log", "doc.text", #selector(exportClicked)), at: 0)
+        }
+        
         for (title, icon, action) in items {
             row.addArrangedSubview(footerButton(title: title, icon: icon, action: action))
         }
@@ -472,13 +634,13 @@ final class PopoverViewController: NSViewController {
         let btn = HoverButton()
         btn.isBordered = false
         btn.wantsLayer = true
-        btn.layer?.cornerRadius    = 7
+        btn.layer?.cornerRadius    = 8
         btn.normalBgColor = Palette.card
-        btn.hoverBgColor  = NSColor(calibratedRed: 0.22, green: 0.22, blue: 0.28, alpha: 1.0)
+        btn.hoverBgColor  = Palette.cardHover
         btn.target = self
         btn.action = action
 
-        let cfg = NSImage.SymbolConfiguration(pointSize: 11, weight: .regular)
+        let cfg = NSImage.SymbolConfiguration(pointSize: 13, weight: .regular)
         btn.image         = NSImage(systemSymbolName: icon, accessibilityDescription: nil)?
                                     .withSymbolConfiguration(cfg)
         btn.imagePosition = .imageAbove
@@ -486,9 +648,10 @@ final class PopoverViewController: NSViewController {
         btn.attributedTitle  = NSAttributedString(
             string: title,
             attributes: [.foregroundColor: Palette.muted,
-                         .font: NSFont.systemFont(ofSize: 9)]
+                         .font: NSFont.systemFont(ofSize: 10, weight: .medium)]
         )
-        btn.heightAnchor.constraint(equalToConstant: 46).isActive = true
+        btn.heightAnchor.constraint(equalToConstant: 48).isActive = true
+        btn.setAccessibilityLabel(title)
         return btn
     }
 
@@ -497,11 +660,11 @@ final class PopoverViewController: NSViewController {
     @objc private func platformCardClicked(_ sender: NSButton) {
         guard let id = sender.identifier,
               let platform = CloudPlatform(rawValue: id.rawValue) else { return }
-              
+
         if platform.isPro && !showProPrompt(featureName: platform.rawValue) {
             return
         }
-        
+
         selectedPlatform = platform
         refreshPlatformCards()
         onPlatformChanged?(platform)
@@ -513,40 +676,40 @@ final class PopoverViewController: NSViewController {
     @objc private func updateClicked()       { onCheckUpdates?() }
     @objc private func quitClicked()         { onQuit?() }
 
-    @objc private func presetChanged(_ sender: NSSegmentedControl) {
-        let preset = PresetName.allCases[sender.selectedSegment]
+    @objc private func presetPillClicked(_ sender: NSButton) {
+        guard let id = sender.identifier,
+              let preset = PresetName(rawValue: id.rawValue) else { return }
         if preset.isPro && !showProPrompt(featureName: preset.rawValue) {
-            presetControl?.selectedSegment = PresetName.allCases.firstIndex(of: Preferences.selectedPreset) ?? 0
             return
         }
         onPresetChanged?(preset)
     }
-    
-    @objc private func autoDetectToggled() { 
+
+    @objc private func autoDetectToggled() {
         if autoDetectSwitch.state == .on && !showProPrompt(featureName: "Auto-Detect") {
             autoDetectSwitch.state = .off
             return
         }
-        onToggleAutoDetect?() 
+        onToggleAutoDetect?()
     }
-    
+
     @objc private func hudToggled()        { onToggleHUD?() }
     @objc private func notifToggled()      { onToggleNotifications?() }
-    
-    @objc private func keepAliveToggled()  { 
+
+    @objc private func keepAliveToggled()  {
         if keepAliveSwitch.state == .on && !showProPrompt(featureName: "Keep Alive") {
             keepAliveSwitch.state = .off
             return
         }
-        onToggleKeepAlive?() 
+        onToggleKeepAlive?()
     }
 
     // MARK: - License UI
-    
+
     private var licenseOverlay: NSView?
     private var licenseTextField: NSTextField?
     private var licenseErrorLabel: NSTextField?
-    
+
     private func showProPrompt(featureName: String) -> Bool {
         if ProManager.shared.isProUnlocked { return true }
 
@@ -556,7 +719,6 @@ final class PopoverViewController: NSViewController {
         }
 
         DiagnosticsManager.shared.log("showProPrompt: \(featureName)")
-        NSLog("CloudBoost showProPrompt: %@", featureName)
 
         let alert = NSAlert()
         alert.messageText = "Unlock CloudBoost PRO"
@@ -591,15 +753,14 @@ final class PopoverViewController: NSViewController {
 
         return false
     }
-    
+
     @objc private func performUnlock() {
         guard let key = licenseTextField?.stringValue.trimmingCharacters(in: .whitespacesAndNewlines), !key.isEmpty else { return }
-        
+
         licenseTextField?.isEnabled = false
         licenseErrorLabel?.isHidden = true
 
         DiagnosticsManager.shared.log("performUnlock invoked")
-        NSLog("CloudBoost performUnlock invoked")
         performUnlock(key: key)
     }
 
@@ -610,7 +771,7 @@ final class PopoverViewController: NSViewController {
             DispatchQueue.main.async {
                 let alert = NSAlert()
                 alert.messageText = success ? "Unlocked" : "License Error"
-                alert.informativeText = success ? "Success! CloudBoost PRO is now unlocked." : (errorMsg ?? "Invalid License Key.")
+                alert.informativeText = success ? "CloudBoost PRO is now unlocked." : (errorMsg ?? "Invalid License Key.")
                 alert.alertStyle = success ? .informational : .warning
                 alert.addButton(withTitle: "OK")
 
@@ -627,17 +788,16 @@ final class PopoverViewController: NSViewController {
             }
         }
     }
-    
+
     @objc private func buyLicense() {
         if let url = URL(string: "https://victorbrandao0.gumroad.com/l/CloudBoost") {
             NSWorkspace.shared.open(url)
         }
     }
-    
+
     @objc private func dismissOverlay() {
         guard let overlay = licenseOverlay else { return }
         DiagnosticsManager.shared.log("dismissOverlay invoked")
-        NSLog("CloudBoost dismissOverlay invoked")
         NSAnimationContext.runAnimationGroup({ ctx in
             ctx.duration = 0.2
             overlay.animator().alphaValue = 0
@@ -660,13 +820,15 @@ final class PopoverViewController: NSViewController {
     }
 
     func updateStats(cpu: String, ping: String, nice: String) {
-        cpuStat?.stringValue  = "CPU \(cpu)%"
-        pingStat?.stringValue = "⚡ \(ping)"
-        niceStat?.stringValue = "n \(nice)"
+        cpuStat?.stringValue  = "\(cpu)%"
+        pingStat?.stringValue = "\(ping)"
+        niceStat?.stringValue = "\(nice)"
     }
 
     func updatePreset(_ preset: PresetName) {
-        presetControl?.selectedSegment = PresetName.allCases.firstIndex(of: preset) ?? 0
+        for (p, btn) in presetButtons {
+            btn.normalBgColor = (p == preset) ? Palette.cardSelected : Palette.card
+        }
     }
 
     func setLoading(_ loading: Bool) {
@@ -675,7 +837,7 @@ final class PopoverViewController: NSViewController {
 
     @objc private func refreshAll() {
         refreshPlatformCards()
-        refreshPresetControl()
+        refreshPresetCards()
         refreshSettingsLabels()
     }
 
@@ -688,41 +850,55 @@ final class PopoverViewController: NSViewController {
         let isPro = ProManager.shared.isProUnlocked
         for (platform, btn) in platformButtons {
             let sel = platform == selectedPlatform
-            var title = platform.shortName
-            
+
             let isLocked = platform.isPro && !isPro
-            if let hoverBtn = btn as? HoverButton { hoverBtn.isLockedState = isLocked }
-            
+            let hoverBtn = btn as! HoverButton
+            hoverBtn.isLockedState = isLocked
+
+            var title = platform.shortName
             if isLocked { title += " 🔒" }
-            
-            if let hoverBtn = btn as? HoverButton {
-                hoverBtn.normalBgColor = sel ? Palette.cardSelected : Palette.card
-            } else {
-                btn.layer?.backgroundColor = sel ? Palette.cardSelected.cgColor : Palette.card.cgColor
-            }
-            
+
+            hoverBtn.normalBgColor = sel ? Palette.cardSelected : Palette.card
+
             btn.layer?.borderWidth     = sel ? 1.5 : 0
             btn.layer?.borderColor     = sel ? Palette.green.cgColor : nil
-            btn.contentTintColor       = sel ? Palette.green : NSColor(white: 0.78, alpha: 1)
+            btn.contentTintColor       = sel ? Palette.green : NSColor(white: 0.72, alpha: 1)
             btn.alphaValue             = isLocked ? 0.4 : 1.0
             btn.attributedTitle        = NSAttributedString(
                 string: title,
                 attributes: [
-                    .foregroundColor: sel ? Palette.green : NSColor(white: 0.68, alpha: 1),
-                    .font: NSFont.systemFont(ofSize: 8.5, weight: .semibold)
+                    .foregroundColor: sel ? Palette.green : Palette.textSecondary,
+                    .font: NSFont.systemFont(ofSize: 9, weight: sel ? .semibold : .medium)
                 ]
             )
         }
     }
-    
-    private func refreshPresetControl() {
+
+    private func refreshPresetCards() {
         let isPro = ProManager.shared.isProUnlocked
-        for (index, preset) in PresetName.allCases.enumerated() {
-            let title = preset.isPro && !isPro ? "\(preset.shortLabel) 🔒" : preset.shortLabel
-            presetControl?.setLabel(title, forSegment: index)
+        let current = Preferences.selectedPreset
+        for (preset, btn) in presetButtons {
+            let sel = preset == current
+            let isLocked = preset.isPro && !isPro
+
+            var title = preset.rawValue
+            if isLocked { title += " 🔒" }
+
+            btn.normalBgColor = sel ? Palette.cardSelected : Palette.card
+
+            btn.layer?.borderWidth = sel ? 1.5 : 0
+            btn.layer?.borderColor = sel ? Palette.blue.cgColor : nil
+            btn.alphaValue         = isLocked ? 0.5 : 1.0
+            btn.attributedTitle    = NSAttributedString(
+                string: title,
+                attributes: [
+                    .foregroundColor: sel ? Palette.blue : Palette.textSecondary,
+                    .font: NSFont.systemFont(ofSize: 11, weight: sel ? .semibold : .medium)
+                ]
+            )
         }
     }
-    
+
     private func refreshSettingsLabels() {
         let isPro = ProManager.shared.isProUnlocked
         autoDetectLabel?.stringValue = isPro ? "Auto-detect Platform" : "Auto-detect Platform 🔒"
@@ -756,7 +932,6 @@ final class PopoverViewController: NSViewController {
         hudSwitch?.state        = Preferences.hudEnabled        ? .on : .off
         notifSwitch?.state      = Preferences.notificationsEnabled ? .on : .off
         keepAliveSwitch?.state  = Preferences.keepAliveEnabled  ? .on : .off
-        presetControl?.selectedSegment = PresetName.allCases.firstIndex(of: Preferences.selectedPreset) ?? 0
     }
 
     // MARK: - Factory helpers
@@ -774,6 +949,7 @@ final class PopoverViewController: NSViewController {
         v.layer?.backgroundColor = Palette.separator.cgColor
         v.translatesAutoresizingMaskIntoConstraints = false
         v.heightAnchor.constraint(equalToConstant: 1).isActive = true
+        v.widthAnchor.constraint(equalToConstant: 320).isActive = true
         return v
     }
 
@@ -781,9 +957,10 @@ final class PopoverViewController: NSViewController {
         let s = NSStackView()
         s.orientation = .vertical
         s.spacing     = spacing
-        s.alignment   = .leading
+        s.alignment   = .centerX
         s.edgeInsets  = insets
         s.translatesAutoresizingMaskIntoConstraints = false
+        s.widthAnchor.constraint(equalToConstant: 320).isActive = true
         return s
     }
 
@@ -792,45 +969,35 @@ final class PopoverViewController: NSViewController {
         let tf = NSTextField(labelWithString: text)
         tf.font      = .systemFont(ofSize: size, weight: weight)
         tf.textColor = color
-        return tf
-    }
-
-    private func sectionLabel(_ text: String) -> NSTextField {
-        label(text, size: 10, weight: .semibold, color: Palette.muted)
-    }
-
-    private func statLabel(_ text: String) -> NSTextField {
-        let tf = NSTextField(labelWithString: text)
-        tf.font      = NSFont.monospacedDigitSystemFont(ofSize: 11, weight: .regular)
-        tf.textColor = .white
         tf.alignment = .center
         return tf
     }
 
-    private func makeSwitch(_ on: Bool, action: Selector) -> NSSwitch {
+    private func sectionLabel(_ text: String) -> NSTextField {
+        let tf = label(text, size: 10, weight: .bold, color: Palette.muted)
+        tf.alignment = .center
+        return tf
+    }
+
+    private func statLabel(_ text: String) -> NSTextField {
+        let tf = label(text, size: 11, weight: .bold, color: .white)
+        tf.alignment = .center
+        return tf
+    }
+
+    private func makeSwitch(_ value: Bool, action: Selector) -> NSSwitch {
         let s = NSSwitch()
-        s.state  = on ? .on : .off
+        s.state = value ? .on : .off
         s.target = self
         s.action = action
         return s
     }
 
-    private func appVersion() -> String {
-        if let v = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String,
-           !v.isEmpty {
-            return v
-        }
-
-        if let v = readRepoReleaseVersion() {
-            return v
-        }
-
-        return "DEV"
-    }
-
-    private func readRepoReleaseVersion() -> String? {
+    private func resolveVersion() -> String {
+        if let v = cachedVersion { return v }
         let cwd = FileManager.default.currentDirectoryPath
         let candidates = [
+            "\(cwd)/CloudBoost/Info.plist",
             "\(cwd)/.release/CloudBoost.app/Contents/Info.plist",
             "\(cwd)/CloudBoost.app/Contents/Info.plist"
         ]
@@ -841,22 +1008,11 @@ final class PopoverViewController: NSViewController {
                let dict = plist as? [String: Any],
                let v = dict["CFBundleShortVersionString"] as? String,
                !v.isEmpty {
+                cachedVersion = v
                 return v
             }
         }
-
-        return nil
-    }
-}
-
-// MARK: - PresetName shortLabel
-
-private extension PresetName {
-    var shortLabel: String {
-        switch self {
-        case .competitive:  return "Max"
-        case .balanced:     return "Balanced"
-        case .streamQuality: return "Quality"
-        }
+        cachedVersion = "3.0.1"
+        return "3.0.1"
     }
 }

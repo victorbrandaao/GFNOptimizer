@@ -1,6 +1,6 @@
 import AppKit
 
-class AppDelegate: NSObject, NSApplicationDelegate {
+public class AppDelegate: NSObject, NSApplicationDelegate {
 
     // MARK: - Properties
 
@@ -20,7 +20,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     // MARK: - Launch
 
-    func applicationDidFinishLaunching(_ notification: Notification) {
+    public func applicationDidFinishLaunching(_ notification: Notification) {
         statusItem  = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         popoverCtrl = PopoverController(statusItem: statusItem)
 
@@ -40,7 +40,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         UpdateManager.shared.checkForUpdates(silent: true)
     }
 
-    func applicationWillTerminate(_ notification: Notification) {
+    public func applicationWillTerminate(_ notification: Notification) {
         SystemManager.shared.disableGamingMode {}
     }
 
@@ -53,11 +53,17 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         vc.onPlatformChanged = { [weak self] platform in
             guard let self else { return }
+            let previousPlatform = selectedPlatform
             selectedPlatform = platform
             UserDefaults.standard.set(platform.rawValue, forKey: "SelectedPlatform")
             popoverCtrl.viewController.updateState(isBoosterActive: isBoosterActive,
                                                    selectedPlatform: platform)
             DiagnosticsManager.shared.log("Platform changed: \(platform.rawValue)")
+
+            // Re-apply renice to the new platform's processes if boost is active.
+            if isBoosterActive, platform != previousPlatform {
+                SystemManager.shared.reapplyRenice(processNames: platform.processNames)
+            }
         }
 
         vc.onPresetChanged = { [weak self] preset in
@@ -173,14 +179,20 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         autoDetectTimer = Timer.scheduledTimer(withTimeInterval: 5.0, repeats: true) { [weak self] _ in
             guard let self,
                   let detected = PlatformDetector.detectActivePlatform(),
-                  detected != selectedPlatform else { return }
-            selectedPlatform = detected
+                  detected != self.selectedPlatform else { return }
+            let previous = self.selectedPlatform
+            self.selectedPlatform = detected
             UserDefaults.standard.set(detected.rawValue, forKey: "SelectedPlatform")
-            popoverCtrl.viewController.updateState(isBoosterActive: isBoosterActive,
+            self.popoverCtrl.viewController.updateState(isBoosterActive: self.isBoosterActive,
                                                    selectedPlatform: detected)
             NotificationManager.shared.notify(title: "CloudBoost",
                                               body: "Auto-detected: \(detected.rawValue)")
             DiagnosticsManager.shared.log("Auto-detected platform: \(detected.rawValue)")
+
+            // Re-apply renice to the newly detected platform if boost is active.
+            if self.isBoosterActive, detected != previous {
+                SystemManager.shared.reapplyRenice(processNames: detected.processNames)
+            }
         }
     }
 

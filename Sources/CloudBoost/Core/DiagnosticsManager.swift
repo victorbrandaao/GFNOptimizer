@@ -10,11 +10,16 @@ final class DiagnosticsManager {
     private let maxEvents = 200
     private let queue = DispatchQueue(label: "com.cloudboost.diagnostics", qos: .utility)
 
+    private static let dateFormatter: ISO8601DateFormatter = {
+        let f = ISO8601DateFormatter()
+        return f
+    }()
+
     private init() {}
 
     func log(_ message: String) {
         queue.async {
-            let timestamp = ISO8601DateFormatter().string(from: Date())
+            let timestamp = DiagnosticsManager.dateFormatter.string(from: Date())
             let line = "[\(timestamp)] \(message)"
             self.events.append(line)
             if self.events.count > self.maxEvents {
@@ -35,8 +40,9 @@ final class DiagnosticsManager {
     }
 
     func buildReport(selectedPlatform: CloudPlatform, targetProcessNames: [String]) -> String {
-        // queue.sync is safe here: the caller must NOT be on the same serial queue.
-        queue.sync {
+        // Prevent deadlock if ever called from our own serial queue.
+        dispatchPrecondition(condition: .notOnQueue(queue))
+        return queue.sync {
             var lines: [String] = []
             lines.append("CloudBoost Diagnostics")
             lines.append("Date: \(Date())")

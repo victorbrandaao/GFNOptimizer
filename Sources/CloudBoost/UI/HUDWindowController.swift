@@ -39,6 +39,7 @@ final class HUDWindowController: NSWindowController {
         statusLabel.font          = NSFont.monospacedDigitSystemFont(ofSize: 10, weight: .medium)
         statusLabel.textColor     = .white
         statusLabel.lineBreakMode = .byTruncatingTail
+        statusLabel.setAccessibilityLabel("CloudBoost HUD stats")
         effect.addSubview(statusLabel)
 
         super.init(window: panel)
@@ -70,7 +71,11 @@ final class HUDWindowController: NSWindowController {
     }
 
     private func positionPanel(_ panel: NSPanel) {
-        guard let screenFrame = NSScreen.main?.visibleFrame else { return }
+        // Guard against NSScreen.main being nil during monitor hot-swap.
+        guard let screenFrame = NSScreen.main?.visibleFrame else {
+            DiagnosticsManager.shared.log("HUD: NSScreen.main unavailable during reposition")
+            return
+        }
         let x = screenFrame.maxX - panel.frame.width - 20
         let y = screenFrame.maxY - panel.frame.height - 20
         panel.setFrameOrigin(NSPoint(x: x, y: y))

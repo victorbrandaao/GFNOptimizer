@@ -69,7 +69,7 @@ struct Preferences {
                let preset = PresetName(rawValue: raw) {
                 return preset
             }
-            return .competitive
+            return .balanced
         }
         set { defaults.set(newValue.rawValue, forKey: Keys.selectedPreset) }
     }

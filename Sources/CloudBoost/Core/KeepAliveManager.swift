@@ -36,11 +36,19 @@ final class KeepAliveManager {
         timer = nil
     }
 
+    /// Nudges the cursor by 1px and back to prevent idle sleep.
+    /// Converts from AppKit's bottom-left coordinate system to
+    /// Core Graphics' top-left system used by CGEvent.
     private func wiggleMouse() {
-        let currentLocation = DispatchQueue.main.sync { NSEvent.mouseLocation }
-        let nudgedLocation = CGPoint(x: currentLocation.x + 1, y: currentLocation.y + 1)
-        postMouseMove(to: nudgedLocation)
-        postMouseMove(to: currentLocation)
+        let nsPoint = DispatchQueue.main.sync { NSEvent.mouseLocation }
+
+        // Convert from AppKit (origin bottom-left) to CG (origin top-left).
+        guard let screenHeight = DispatchQueue.main.sync(execute: { NSScreen.main?.frame.height }) else { return }
+        let cgPoint = CGPoint(x: nsPoint.x, y: screenHeight - nsPoint.y)
+        let nudged  = CGPoint(x: cgPoint.x + 1, y: cgPoint.y + 1)
+
+        postMouseMove(to: nudged)
+        postMouseMove(to: cgPoint)
     }
 
     private func postMouseMove(to point: CGPoint) {

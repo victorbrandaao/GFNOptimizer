@@ -60,6 +60,25 @@ final class SystemManager {
         }
     }
 
+    /// Re-applies renice to the given process names using existing admin session.
+    /// Called when the user switches platform while boost is active.
+    func reapplyRenice(processNames: [String]) {
+        DispatchQueue.global(qos: .userInitiated).async {
+            let filteredNames = self.filterProcessNames(processNames)
+            guard !filteredNames.isEmpty else { return }
+
+            let quoted = filteredNames.map { self.shellQuote($0) }.joined(separator: " ")
+            let reniceCmd = """
+            for name in \(quoted); do \
+              PID=$(pgrep -x "$name" | head -n 1); \
+              if [ -n "$PID" ]; then renice -20 -p "$PID"; fi; \
+            done
+            """
+            let success = self.executePrivileged(reniceCmd)
+            DiagnosticsManager.shared.log("reapplyRenice: \(success ? "OK" : "failed")")
+        }
+    }
+
     func disableGamingMode(completion: @escaping () -> Void) {
         DispatchQueue.global(qos: .userInitiated).async {
             self.restoreSnapshotIfNeeded()
@@ -112,10 +131,9 @@ final class SystemManager {
     }
 
     private func stopCaffeinate() {
-        if let p = caffeinateProcess, p.isRunning {
-            p.terminate()
-            caffeinateProcess = nil
-        }
+        guard let p = caffeinateProcess else { return }
+        if p.isRunning { p.terminate() }
+        caffeinateProcess = nil
     }
 
     // MARK: - System snapshot
@@ -144,7 +162,7 @@ final class SystemManager {
 
         let awdlCmd  = state.awdlEnabled        ? "ifconfig awdl0 up"   : "ifconfig awdl0 down"
         let tmCmd    = state.timeMachineEnabled  ? "tmutil enable"       : "tmutil disable"
-        let mouseCmd = "defaults write -g com.apple.mouse.scaling \(state.mouseScaling)"
+        let mouseCmd = "defaults write -g com.apple.mouse.scaling \(shellQuote(state.mouseScaling))"
         let script   = "\(awdlCmd); \(tmCmd); \(mouseCmd)"
 
         if executePrivileged(script) {
@@ -169,8 +187,8 @@ final class SystemManager {
 
     /// Returns `value` enclosed in single quotes, safe for POSIX shell embedding.
     /// Any literal single-quote inside the value is replaced with `'\''`.
-    private func shellQuote(_ value: String) -> String {
-        "'\(value.replacingOccurrences(of: "'", with: "'\\''"))'"
+    func shellQuote(_ value: String) -> String {
+        "'\(value.replacingOccurrences(of: "'", with: "'\\''" ))'"
     }
 
     private func runShell(_ command: String) -> String {
@@ -201,12 +219,12 @@ final class SystemManager {
     }
 
     func readCpuUsage(pid: String) -> String? {
-        let v = runShell("ps -p \(pid) -o %cpu= | tr -d ' '")
+        let v = runShell("ps -p \(shellQuote(pid)) -o %cpu= | tr -d ' '")
         return v.isEmpty ? nil : v
     }
 
     func readNiceValue(pid: String) -> String? {
-        let v = runShell("ps -p \(pid) -o nice= | tr -d ' '")
+        let v = runShell("ps -p \(shellQuote(pid)) -o nice= | tr -d ' '")
         return v.isEmpty ? nil : v
     }
 

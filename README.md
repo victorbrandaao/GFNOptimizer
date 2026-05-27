@@ -24,7 +24,7 @@ Currently supports: **GeForce NOW**, **Boosteroid**, **Xbox Cloud Gaming (xCloud
 
 ## Installation
 
-1. Go to the [Releases](https://github.com/victorbrandaao/CloudBoost/releases/latest) tab and download the latest **CloudBoost_v3.0.0.dmg** file.
+1. Go to the [Releases](https://github.com/victorbrandaao/CloudBoost/releases/latest) tab and download the latest **CloudBoost_v3.0.1.dmg** file.
 2. Open the `.dmg` and drag **CloudBoost.app** to your `/Applications` folder.
 
 > **Note on macOS Gatekeeper:**
