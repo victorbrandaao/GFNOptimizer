@@ -35,12 +35,27 @@ class UpdateManager {
                     // Parse release notes from the GitHub API response body field.
                     let releaseNotes  = json["body"] as? String ?? "No release notes available."
 
+                    var minVersion: String? = nil
+                    if let regex = try? NSRegularExpression(pattern: "\\[MIN_VERSION:\\s*([0-9.]+)\\]"),
+                       let match = regex.firstMatch(in: releaseNotes, range: NSRange(releaseNotes.startIndex..., in: releaseNotes)) {
+                        if let range = Range(match.range(at: 1), in: releaseNotes) {
+                            minVersion = String(releaseNotes[range])
+                        }
+                    }
+                    
+                    let isDeprecated = minVersion != nil && currentVersion.compare(minVersion!, options: .numeric) == .orderedAscending
+
                     if latestVersion.compare(currentVersion, options: .numeric) == .orderedDescending {
                         DispatchQueue.main.async {
-                            self.showUpdatePrompt(latestVersion: latestVersion,
-                                                  currentVersion: currentVersion,
-                                                  downloadUrl: htmlUrl,
-                                                  releaseNotes: releaseNotes)
+                            if isDeprecated {
+                                self.showMandatoryUpdatePrompt(latestVersion: latestVersion,
+                                                               downloadUrl: htmlUrl)
+                            } else {
+                                self.showUpdatePrompt(latestVersion: latestVersion,
+                                                      currentVersion: currentVersion,
+                                                      downloadUrl: htmlUrl,
+                                                      releaseNotes: releaseNotes)
+                            }
                         }
                     } else if !silent {
                         DispatchQueue.main.async { self.showUpToDate(currentVersion: currentVersion) }
@@ -72,6 +87,24 @@ class UpdateManager {
             if let url = URL(string: downloadUrl) { NSWorkspace.shared.open(url) }
         } else if response == .alertSecondButtonReturn {
             showReleaseNotes(releaseNotes, version: latestVersion, downloadUrl: downloadUrl)
+        }
+    }
+
+    private func showMandatoryUpdatePrompt(latestVersion: String,
+                                           downloadUrl: String) {
+        let alert = NSAlert()
+        alert.messageText    = "Critical Update Required — v\(latestVersion)"
+        alert.informativeText = "Your current version of CloudBoost is no longer supported. You must update to continue using the app."
+        alert.alertStyle     = .critical
+        alert.addButton(withTitle: "Download Update")
+        alert.addButton(withTitle: "Quit")
+
+        let response = alert.runModal()
+        if response == .alertFirstButtonReturn {
+            if let url = URL(string: downloadUrl) { NSWorkspace.shared.open(url) }
+            NSApp.terminate(nil)
+        } else {
+            NSApp.terminate(nil)
         }
     }
 
