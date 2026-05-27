@@ -4,7 +4,7 @@
   <img src="https://img.shields.io/badge/macOS-12.0+-000000?style=for-the-badge&logo=apple&logoColor=white" alt="macOS" />
   <img src="https://img.shields.io/badge/Architecture-Universal_Binary-8A2BE2?style=for-the-badge" alt="Universal Binary" />
   <img src="https://img.shields.io/badge/Swift-5.9+-FA7343?style=for-the-badge&logo=swift&logoColor=white" alt="Swift" />
-  <img src="https://img.shields.io/github/downloads/victorbrandaao/CloudBoost/total?style=for-the-badge&color=2ea44f&logo=github" alt="Downloads" />
+  <img src="https://img.shields.io/github/downloads/victorbrandaao/CloudBoost/total?style=for-the-badge&color=2ea44f&logo=github" alt="Total Downloads" />
 </p>
 
 **CloudBoost** is a native macOS menu bar utility that optimizes your operating system in real-time to eliminate micro-stutters, ping spikes, and input lag during cloud gaming sessions.
