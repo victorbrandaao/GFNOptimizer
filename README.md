@@ -4,10 +4,10 @@
   <img src="https://img.shields.io/badge/macOS-12.0+-000000?style=for-the-badge&logo=apple&logoColor=white" alt="macOS" />
   <img src="https://img.shields.io/badge/Architecture-Universal_Binary-8A2BE2?style=for-the-badge" alt="Universal Binary" />
   <img src="https://img.shields.io/badge/Swift-5.9+-FA7343?style=for-the-badge&logo=swift&logoColor=white" alt="Swift" />
-  <img src="https://img.shields.io/github/downloads/victorbrandaao/CloudBoost/total?style=for-the-badge&color=2ea44f&logo=github&v=3" alt="Downloads" />
+  <img src="https://img.shields.io/github/downloads/victorbrandaao/CloudBoost/total?style=for-the-badge&color=2ea44f&logo=github" alt="Downloads" />
 </p>
 
-**CloudBoost** is a native macOS menu bar utility written in Swift. It optimizes your operating system in real-time to eliminate micro-stutters, ping spikes, and input lag during cloud gaming sessions.
+**CloudBoost** is a native macOS menu bar utility that optimizes your operating system in real-time to eliminate micro-stutters, ping spikes, and input lag during cloud gaming sessions.
 
 Currently supports natively: **GeForce NOW**, **Boosteroid**, **Xbox Cloud Gaming (xCloud)**, **Moonlight**, and **VoidLink Extreme**.
 
@@ -20,6 +20,29 @@ Currently supports natively: **GeForce NOW**, **Boosteroid**, **Xbox Cloud Gamin
 </p>
 
 <br>
+
+---
+
+## 📥 Installation & Download
+
+1. Go to the [Releases](https://github.com/victorbrandaao/CloudBoost/releases/latest) tab and download the latest **CloudBoost_v3.0.0.dmg** file.
+2. Open the `.dmg` and drag **CloudBoost.app** to your `/Applications` folder.
+
+> **⚠️ Important note on macOS Gatekeeper:**
+> Because this is an independent tool, macOS will likely throw an "App is damaged" error when you try to open it for the first time. To clear the quarantine flag, simply open your Terminal and run:
+> ```bash
+> xattr -cr /Applications/"CloudBoost.app"
+> ```
+
+---
+
+## 🔐 CloudBoost PRO
+
+Unlock the full potential of your cloud gaming experience with **CloudBoost PRO**.
+
+1. Purchase a license at [Gumroad](https://victorbrandao0.gumroad.com/l/CloudBoost).
+2. You will receive an email with your unique license key.
+3. Open CloudBoost on your Mac, click on any PRO feature, and paste the license key to activate.
 
 ---
 
@@ -43,61 +66,7 @@ macOS runs several background processes that compromise high-refresh-rate, low-l
 * **Floating Performance HUD:** A sleek "pill" overlay that floats in the corner of your screen showing live CPU usage, nice level, and ping stats, automatically repositioning itself when monitors change.
 * **Performance Presets:** Choose between *Competitive* (maximum boost), *Balanced* (network focus), and *Stream Quality* (disables RAM purging to avoid stream decoding micro-hitches).
 * **Auto-Detect Platform:** CloudBoost can automatically detect which platform you are playing and switch its priority targeting.
-* **Diagnostics & Safe Restore:** Keeps a snapshot of your system. If the app crashes, it automatically restores your settings on the next launch.
-
----
-
-## 💻 Compatibility
-
-* **Universal Binary:** Compiled natively for both **Apple Silicon (M-Series)** and older **Intel Macs**. It runs on bare metal with zero Rosetta translation overhead.
-* **Auto-Updater:** The app silently checks the GitHub API on startup and will prompt you natively when a new version is available.
-
----
-
-## 📥 Installation
-
-1. Go to the [Releases](https://github.com/victorbrandaao/CloudBoost/releases) tab and download the latest `.dmg` file.
-2. Open the `.dmg` and drag **CloudBoost.app** to your `/Applications` folder.
-
-> **⚠️ Important note on macOS Gatekeeper:**
-> Because this is an unsigned tool, macOS will likely throw an "App is damaged" error when you try to open it. To clear the quarantine flag, simply open your Terminal and run:
-> ```bash
-> xattr -cr /Applications/"CloudBoost.app"
-> ```
-
----
-
-## 🔐 CloudBoost PRO Activation
-
-1. Purchase a license at https://victorbrandao0.gumroad.com/l/CloudBoost
-2. Gumroad emails your unique license key after checkout.
-3. Open CloudBoost, trigger any PRO feature, and paste the license key.
-
-If you did not receive the email, check your spam folder or resend the receipt from Gumroad.
-
----
-
-## 🛠️ Maintainer Release Flow
-
-To avoid shipping stale bundles (wrong version/signature metadata), always generate releases from source using the release script:
-
-```bash
-chmod +x scripts/release.sh
-scripts/release.sh 2.0.2
-```
-
-This script:
-
-* Builds a fresh release binary with SwiftPM.
-* Creates a clean `.app` bundle with the version passed in the command.
-* Signs the full bundle (not only the executable).
-* Produces `CloudBoost_v<version>.dmg` at the repository root.
-
-If you have a Developer ID certificate, you can sign with it:
-
-```bash
-SIGN_IDENTITY="Developer ID Application: Your Name (TEAMID)" scripts/release.sh 2.0.2
-```
+* **Auto-Updater:** The app silently checks for updates and enforces mandatory critical updates to keep you on the most stable version.
 
 ---
 
@@ -106,9 +75,5 @@ SIGN_IDENTITY="Developer ID Application: Your Name (TEAMID)" scripts/release.sh 
 If CloudBoost improved your cloud gaming experience on macOS, please consider **[sponsoring the project](https://github.com/sponsors/victorbrandaao)**.
 
 Your sponsorship directly helps fund:
-
 * Ongoing maintenance and compatibility fixes.
-* Faster bug triage and issue resolution.
 * New platform integrations and requested features.
-
-Every contribution helps keep CloudBoost stable and actively maintained.
