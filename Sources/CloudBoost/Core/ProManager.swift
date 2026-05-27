@@ -37,9 +37,9 @@ final class ProManager {
         request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
         request.setValue("application/json", forHTTPHeaderField: "Accept")
 
-        let productPermalink = "CloudBoost"
+        let productId = "FPPuMzAsjXANmNOzdPUGJw=="
         let encodedKey = key.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? key
-        let bodyString = "product_permalink=\(productPermalink)&license_key=\(encodedKey)"
+        let bodyString = "product_id=\(productId)&license_key=\(encodedKey)"
         request.httpBody = bodyString.data(using: .utf8)
 
         let task = URLSession.shared.dataTask(with: request) { [weak self] data, response, error in
@@ -98,9 +98,9 @@ final class ProManager {
         request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
         request.setValue("application/json", forHTTPHeaderField: "Accept")
 
-        let productPermalink = "CloudBoost"
+        let productId = "FPPuMzAsjXANmNOzdPUGJw=="
         let encodedKey = key.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? key
-        let bodyString = "product_permalink=\(productPermalink)&license_key=\(encodedKey)"
+        let bodyString = "product_id=\(productId)&license_key=\(encodedKey)"
         request.httpBody = bodyString.data(using: .utf8)
 
         let task = URLSession.shared.dataTask(with: request) { [weak self] data, _, error in
