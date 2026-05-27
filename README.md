@@ -16,7 +16,6 @@ Currently supports natively: **GeForce NOW**, **Boosteroid**, **Xbox Cloud Gamin
 <p align="center">
   <img src="assets/img1.png" width="400" alt="CloudBoost Default Menu">
   &nbsp;&nbsp;&nbsp;&nbsp;
-  <img src="assets/img2.png" width="400" alt="CloudBoost Feature Screenshot">
 </p>
 
 <br>
