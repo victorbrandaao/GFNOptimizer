@@ -20,10 +20,17 @@ echo "[1/6] Limpando artefatos temporarios"
 rm -rf "$WORK_DIR"
 mkdir -p "$APP_DIR/Contents/MacOS" "$APP_DIR/Contents/Resources"
 
-echo "[2/6] Build release com SwiftPM"
-swift build -c release --package-path "$ROOT_DIR"
+echo "[2/6] Build release com SwiftPM (Universal)"
+swift build -c release --arch arm64 --package-path "$ROOT_DIR"
+swift build -c release --arch x86_64 --package-path "$ROOT_DIR"
 
+BIN_PATH_ARM="$ROOT_DIR/.build/arm64-apple-macosx/release/$APP_NAME"
+BIN_PATH_X86="$ROOT_DIR/.build/x86_64-apple-macosx/release/$APP_NAME"
 BIN_PATH="$ROOT_DIR/.build/release/$APP_NAME"
+
+mkdir -p "$ROOT_DIR/.build/release"
+lipo -create -output "$BIN_PATH" "$BIN_PATH_ARM" "$BIN_PATH_X86"
+
 if [[ ! -f "$BIN_PATH" ]]; then
   echo "Erro: binario nao encontrado em $BIN_PATH"
   exit 1
