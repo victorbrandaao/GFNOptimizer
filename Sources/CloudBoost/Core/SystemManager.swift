@@ -3,6 +3,7 @@ import Foundation
 final class SystemManager {
     static let shared = SystemManager()
     private var caffeinateProcess: Process?
+    private var heartbeatTimer: DispatchSourceTimer?
 
     private init() {}
 
@@ -29,10 +30,11 @@ final class SystemManager {
             DispatchQueue.global(qos: .userInitiated).asyncAfter(deadline: .now() + 4.0) {
                 let filteredNames = self.filterProcessNames(processNames)
 
-                let awdlCmd   = preset.disableAwdl        ? "ifconfig awdl0 down"                                        : "true"
+                let awdlCmd   = "true"
                 let dnsCmd    = preset.flushDns           ? "dscacheutil -flushcache && killall -HUP mDNSResponder"      : "true"
                 let tmCmd     = preset.disableTimeMachine ? "tmutil disable"                                             : "true"
                 let purgeCmd  = preset.purgeMemory        ? "command -v purge >/dev/null && purge || true"               : "true"
+                let kernelCmd = preset.tuneKernelNetwork  ? "sysctl -w net.inet.tcp.delayed_ack=0 >/dev/null 2>&1 || true" : "true"
 
                 var reniceCmd = "true"
                 if !filteredNames.isEmpty {
@@ -45,7 +47,7 @@ final class SystemManager {
                     """
                 }
 
-                let script = [awdlCmd, dnsCmd, tmCmd, purgeCmd, reniceCmd].joined(separator: "; ")
+                let script = [awdlCmd, dnsCmd, tmCmd, purgeCmd, kernelCmd, reniceCmd].joined(separator: "; ")
                 let success = self.executePrivileged(script)
 
                 Preferences.lastBoostActive = success
@@ -53,6 +55,11 @@ final class SystemManager {
                     self.startCaffeinate()
                 } else if !success {
                     self.stopCaffeinate()
+                }
+                if success, preset.disableAwdl {
+                    self.enableAWDLGuard(originallyEnabled: self.snapshotAwdlEnabled())
+                } else {
+                    self.stopAWDLHeartbeat()
                 }
 
                 DispatchQueue.main.async { completion(success) }
@@ -83,6 +90,7 @@ final class SystemManager {
         DispatchQueue.global(qos: .userInitiated).async {
             self.restoreSnapshotIfNeeded()
             self.stopCaffeinate()
+            self.stopAWDLHeartbeat()
             MouseManager.apply(profile: .defaultMac)
             Preferences.lastBoostActive = false
             DispatchQueue.main.async { completion() }
@@ -93,6 +101,7 @@ final class SystemManager {
         DispatchQueue.global(qos: .userInitiated).async {
             guard Preferences.lastBoostActive else { return }
             self.restoreSnapshotIfNeeded()
+            self.stopAWDLHeartbeat()
             Preferences.lastBoostActive = false
             NotificationManager.shared.notify(title: "CloudBoost", body: "Safe restore applied")
             DiagnosticsManager.shared.log("Safe restore applied on launch")
@@ -136,6 +145,36 @@ final class SystemManager {
         caffeinateProcess = nil
     }
 
+    // MARK: - AWDL guard heartbeat
+
+    private func startAWDLHeartbeat() {
+        stopAWDLHeartbeat()
+        let timer = DispatchSource.makeTimerSource(queue: DispatchQueue.global(qos: .utility))
+        timer.schedule(deadline: .now(), repeating: 10.0)
+        timer.setEventHandler {
+            AWDLGuard.shared.refreshHeartbeat()
+        }
+        timer.resume()
+        heartbeatTimer = timer
+    }
+
+    private func stopAWDLHeartbeat() {
+        heartbeatTimer?.cancel()
+        heartbeatTimer = nil
+    }
+
+    private func enableAWDLGuard(originallyEnabled: Bool) {
+        let success = executePrivileged(AWDLGuard.shared.startCommand(originallyEnabled: originallyEnabled))
+        if success {
+            AWDLGuard.shared.markGuarded()
+            startAWDLHeartbeat()
+        } else {
+            AWDLGuard.shared.markInactive()
+            stopAWDLHeartbeat()
+            DiagnosticsManager.shared.log("AWDL Guard failed to start; boost remained active")
+        }
+    }
+
     // MARK: - System snapshot
 
     private func captureSnapshotIfNeeded() {
@@ -146,10 +185,12 @@ final class SystemManager {
         // Use -g (GlobalPreferences) flag so the read domain is consistent
         // with the `defaults write -g` call used during restore.
         let mouseScaling = runShell("defaults read -g com.apple.mouse.scaling 2>/dev/null || echo 1.5")
+        let delayedAck   = readSysctlValue("net.inet.tcp.delayed_ack")
 
         let state = SystemState(awdlEnabled: awdlActive,
                                 timeMachineEnabled: tmActive,
                                 mouseScaling: mouseScaling,
+                                tcpDelayedAck: delayedAck,
                                 timestamp: Date())
         if let data = try? JSONEncoder().encode(state) {
             Preferences.lastSnapshot = data
@@ -160,13 +201,18 @@ final class SystemManager {
         guard let data  = Preferences.lastSnapshot,
               let state = try? JSONDecoder().decode(SystemState.self, from: data) else { return }
 
-        let awdlCmd  = state.awdlEnabled        ? "ifconfig awdl0 up"   : "ifconfig awdl0 down"
         let tmCmd    = state.timeMachineEnabled  ? "tmutil enable"       : "tmutil disable"
         let mouseCmd = "defaults write -g com.apple.mouse.scaling \(shellQuote(state.mouseScaling))"
-        let script   = "\(awdlCmd); \(tmCmd); \(mouseCmd)"
+        let kernelCmd = state.tcpDelayedAck.map {
+            "sysctl -w net.inet.tcp.delayed_ack=\(shellQuote($0)) >/dev/null 2>&1 || true"
+        } ?? "true"
+        let guardedAwdlCmd = AWDLGuard.shared.restoreCommand(originallyEnabled: state.awdlEnabled)
+        let script   = "\(guardedAwdlCmd); \(tmCmd); \(mouseCmd); \(kernelCmd)"
 
+        AWDLGuard.shared.markRestoring()
         if executePrivileged(script) {
             Preferences.lastSnapshot = nil
+            AWDLGuard.shared.markInactive()
         } else {
             DiagnosticsManager.shared.log("Safe restore failed — snapshot retained for next launch")
         }
@@ -181,6 +227,14 @@ final class SystemManager {
         if !allow.isEmpty { result = result.filter {  allow.contains($0) } }
         if !block.isEmpty { result = result.filter { !block.contains($0) } }
         return result
+    }
+
+    private func snapshotAwdlEnabled() -> Bool {
+        guard let data = Preferences.lastSnapshot,
+              let state = try? JSONDecoder().decode(SystemState.self, from: data) else {
+            return true
+        }
+        return state.awdlEnabled
     }
 
     // MARK: - Shell helpers
@@ -203,6 +257,11 @@ final class SystemManager {
         let data = pipe.fileHandleForReading.readDataToEndOfFile()
         return String(data: data, encoding: .utf8)?
             .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+    }
+
+    private func readSysctlValue(_ name: String) -> String? {
+        let value = runShell("sysctl -n \(shellQuote(name)) 2>/dev/null")
+        return value.isEmpty ? nil : value
     }
 
     // MARK: - HUD data sources
@@ -242,5 +301,9 @@ final class SystemManager {
             }
         }
         return "—"
+    }
+
+    func awdlGuardStatus() -> AWDLGuardStatus {
+        AWDLGuard.shared.currentStatus
     }
 }

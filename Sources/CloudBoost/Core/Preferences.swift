@@ -20,6 +20,7 @@ struct PerformancePreset {
     let disableTimeMachine: Bool
     let purgeMemory: Bool
     let keepAwake: Bool
+    let tuneKernelNetwork: Bool
 }
 
 struct Preferences {
@@ -30,6 +31,7 @@ struct Preferences {
         static let notificationsEnabled = "NotificationsEnabled"
         static let hudEnabled = "HudEnabled"
         static let keepAliveEnabled = "KeepAliveEnabled"
+        static let adaptiveIntelligenceEnabled = "AdaptiveIntelligenceEnabled"
         static let keepAliveIntervalMinutes = "KeepAliveIntervalMinutes"
         static let selectedPreset = "SelectedPreset"
         static let allowlist = "ProcessAllowlist"
@@ -56,6 +58,11 @@ struct Preferences {
     static var keepAliveEnabled: Bool {
         get { defaults.object(forKey: Keys.keepAliveEnabled) as? Bool ?? false }
         set { defaults.set(newValue, forKey: Keys.keepAliveEnabled) }
+    }
+
+    static var adaptiveIntelligenceEnabled: Bool {
+        get { defaults.object(forKey: Keys.adaptiveIntelligenceEnabled) as? Bool ?? true }
+        set { defaults.set(newValue, forKey: Keys.adaptiveIntelligenceEnabled) }
     }
 
     static var keepAliveIntervalMinutes: Int {
@@ -101,20 +108,23 @@ struct Preferences {
             return PerformancePreset(name: .competitive,
                                     disableAwdl: true, flushDns: true,
                                     disableTimeMachine: true, purgeMemory: true,
-                                    keepAwake: true)
+                                    keepAwake: true,
+                                    tuneKernelNetwork: true)
         case .balanced:
             // Network-only: kills ping spikes without aggressive system changes.
             return PerformancePreset(name: .balanced,
                                     disableAwdl: true, flushDns: true,
                                     disableTimeMachine: false, purgeMemory: false,
-                                    keepAwake: true)
+                                    keepAwake: true,
+                                    tuneKernelNetwork: false)
         case .streamQuality:
             // Stream-stable: AWDL + DNS + no Time Machine I/O, but skips RAM
             // purge to avoid the memory-pressure spike that causes decoder hitches.
             return PerformancePreset(name: .streamQuality,
                                     disableAwdl: true, flushDns: true,
                                     disableTimeMachine: true, purgeMemory: false,
-                                    keepAwake: true)
+                                    keepAwake: true,
+                                    tuneKernelNetwork: false)
         }
     }
 }

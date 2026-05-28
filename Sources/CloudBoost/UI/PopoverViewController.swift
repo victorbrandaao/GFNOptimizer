@@ -56,9 +56,9 @@ final class PopoverViewController: NSViewController {
             gradientLayer.colors = [start.cgColor, end.cgColor]
 
             let label: String
-            if isLoadingState      { label = "Applying…" }
-            else if isActiveState  { label = "✕  Disable CloudBoost" }
-            else                   { label = "⚡  Enable CloudBoost" }
+            if isLoadingState      { label = "Applying..." }
+            else if isActiveState  { label = "Disable CloudBoost" }
+            else                   { label = "Enable CloudBoost" }
 
             attributedTitle = NSAttributedString(string: label, attributes: [
                 .foregroundColor: NSColor.white.withAlphaComponent(isLoadingState ? 0.5 : 1.0),
@@ -142,14 +142,17 @@ final class PopoverViewController: NSViewController {
 
     private enum Palette {
         static let green        = NSColor(calibratedRed: 0.16, green: 0.84, blue: 0.54, alpha: 1.0)
-        static let card         = NSColor(calibratedRed: 0.13, green: 0.13, blue: 0.16, alpha: 1.0)
-        static let cardHover    = NSColor(calibratedRed: 0.18, green: 0.18, blue: 0.22, alpha: 1.0)
-        static let cardSelected = NSColor(calibratedRed: 0.10, green: 0.28, blue: 0.52, alpha: 0.40)
+        static let card         = NSColor(calibratedRed: 0.12, green: 0.13, blue: 0.16, alpha: 1.0)
+        static let cardHover    = NSColor(calibratedRed: 0.16, green: 0.17, blue: 0.21, alpha: 1.0)
+        static let cardSelected = NSColor(calibratedRed: 0.05, green: 0.28, blue: 0.34, alpha: 0.72)
         static let separator    = NSColor(calibratedRed: 1.0, green: 1.0, blue: 1.0, alpha: 0.08)
         static let muted        = NSColor(calibratedRed: 0.50, green: 0.50, blue: 0.56, alpha: 1.0)
         static let textSecondary = NSColor(calibratedRed: 0.68, green: 0.68, blue: 0.72, alpha: 1.0)
         static let blue         = NSColor(calibratedRed: 0.35, green: 0.60, blue: 1.00, alpha: 1.0)
+        static let amber        = NSColor(calibratedRed: 0.95, green: 0.70, blue: 0.22, alpha: 1.0)
+        static let red          = NSColor(calibratedRed: 0.95, green: 0.26, blue: 0.32, alpha: 1.0)
         static let bg           = NSColor(calibratedRed: 0.10, green: 0.10, blue: 0.12, alpha: 1.0)
+        static let panel        = NSColor(calibratedRed: 0.09, green: 0.10, blue: 0.13, alpha: 0.95)
     }
 
     // MARK: - State
@@ -167,6 +170,7 @@ final class PopoverViewController: NSViewController {
     var onToggleHUD:          (() -> Void)?
     var onToggleNotifications:(() -> Void)?
     var onToggleKeepAlive:    (() -> Void)?
+    var onToggleAdaptiveIntelligence: (() -> Void)?
     var onExportDiagnostics:  (() -> Void)?
     var onCheckUpdates:       (() -> Void)?
     var onQuit:               (() -> Void)?
@@ -177,9 +181,14 @@ final class PopoverViewController: NSViewController {
     private var headerIconView:    NSImageView!
     private var statusPillView:    NSView!
     private var statusPillLabel:   NSTextField!
+    private var planPillLabel:     NSTextField!
     private var cpuStat:           NSTextField!
     private var pingStat:          NSTextField!
     private var niceStat:          NSTextField!
+    private var pathStat:          NSTextField!
+    private var jitterStat:        NSTextField!
+    private var healthStat:        NSTextField!
+    private var awdlStat:          NSTextField!
     private var boostButton:       GradientButton!
     private var platformButtons:   [CloudPlatform: NSButton] = [:]
     private var presetButtons:     [PresetName: HoverButton] = [:]
@@ -187,14 +196,16 @@ final class PopoverViewController: NSViewController {
     private var hudSwitch:         NSSwitch!
     private var notifSwitch:       NSSwitch!
     private var keepAliveSwitch:   NSSwitch!
+    private var adaptiveSwitch:    NSSwitch!
 
     private var autoDetectLabel:   NSTextField?
     private var keepAliveLabel:    NSTextField?
+    private var adaptiveLabel:     NSTextField?
 
     // MARK: - Lifecycle
 
     override func loadView() {
-        let root = NSVisualEffectView(frame: NSRect(x: 0, y: 0, width: 320, height: 560))
+        let root = NSVisualEffectView(frame: NSRect(x: 0, y: 0, width: 340, height: 656))
         root.material     = .hudWindow
         root.blendingMode = .behindWindow
         root.state        = .active
@@ -215,20 +226,14 @@ final class PopoverViewController: NSViewController {
         ])
 
         stack.addArrangedSubview(buildHeader())
-        stack.addArrangedSubview(hairline())
-        stack.addArrangedSubview(buildPlatformSection())
-        stack.addArrangedSubview(hairline())
-        stack.addArrangedSubview(buildStatsRow())
-        stack.addArrangedSubview(hairline())
+        stack.addArrangedSubview(buildTelemetryPanel())
         stack.addArrangedSubview(buildBoostSection())
-        stack.addArrangedSubview(hairline())
+        stack.addArrangedSubview(buildPlatformSection())
         stack.addArrangedSubview(buildPresetSection())
-        stack.addArrangedSubview(hairline())
         stack.addArrangedSubview(buildSettingsSection())
-        stack.addArrangedSubview(hairline())
         stack.addArrangedSubview(buildFooter())
 
-        preferredContentSize = NSSize(width: 320, height: 560)
+        preferredContentSize = NSSize(width: 340, height: 656)
     }
 
     override func viewWillAppear() {
@@ -247,8 +252,8 @@ final class PopoverViewController: NSViewController {
     // MARK: - Section builders
 
     private func buildHeader() -> NSView {
-        let container = fixedHeight(58)
-        container.widthAnchor.constraint(equalToConstant: 320).isActive = true
+        let container = fixedHeight(64)
+        container.widthAnchor.constraint(equalToConstant: 340).isActive = true
 
         let iconConfig = NSImage.SymbolConfiguration(pointSize: 18, weight: .semibold)
         let iconView   = NSImageView()
@@ -281,6 +286,18 @@ final class PopoverViewController: NSViewController {
         statusPillLabel = pillText
         pill.addSubview(pillText)
 
+        let planPill = NSView()
+        planPill.wantsLayer = true
+        planPill.layer?.cornerRadius = 9
+        planPill.layer?.backgroundColor = Palette.card.cgColor
+        planPill.translatesAutoresizingMaskIntoConstraints = false
+
+        let planText = label(ProManager.shared.isProUnlocked ? "PRO" : "FREE", size: 8, weight: .bold, color: ProManager.shared.isProUnlocked ? Palette.green : Palette.muted)
+        planText.alignment = .center
+        planText.translatesAutoresizingMaskIntoConstraints = false
+        planPillLabel = planText
+        planPill.addSubview(planText)
+
         NSLayoutConstraint.activate([
             pillText.centerXAnchor.constraint(equalTo: pill.centerXAnchor),
             pillText.centerYAnchor.constraint(equalTo: pill.centerYAnchor),
@@ -288,11 +305,17 @@ final class PopoverViewController: NSViewController {
             pill.widthAnchor.constraint(greaterThanOrEqualToConstant: 80),
             pillText.leadingAnchor.constraint(equalTo: pill.leadingAnchor, constant: 10),
             pillText.trailingAnchor.constraint(equalTo: pill.trailingAnchor, constant: -10),
+
+            planText.centerXAnchor.constraint(equalTo: planPill.centerXAnchor),
+            planText.centerYAnchor.constraint(equalTo: planPill.centerYAnchor),
+            planPill.heightAnchor.constraint(equalToConstant: 20),
+            planPill.widthAnchor.constraint(equalToConstant: 46),
         ])
 
         container.addSubview(iconView)
         container.addSubview(titleStack)
         container.addSubview(pill)
+        container.addSubview(planPill)
 
         NSLayoutConstraint.activate([
             iconView.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: 16),
@@ -303,7 +326,10 @@ final class PopoverViewController: NSViewController {
             titleStack.centerYAnchor.constraint(equalTo: container.centerYAnchor),
 
             pill.trailingAnchor.constraint(equalTo: container.trailingAnchor, constant: -16),
-            pill.centerYAnchor.constraint(equalTo: container.centerYAnchor),
+            pill.topAnchor.constraint(equalTo: container.topAnchor, constant: 12),
+
+            planPill.trailingAnchor.constraint(equalTo: pill.trailingAnchor),
+            planPill.topAnchor.constraint(equalTo: pill.bottomAnchor, constant: 5),
         ])
 
         return container
@@ -319,7 +345,7 @@ final class PopoverViewController: NSViewController {
         row.distribution = .fillEqually
         row.spacing      = 6
         row.translatesAutoresizingMaskIntoConstraints = false
-        row.widthAnchor.constraint(equalToConstant: 288).isActive = true
+        row.widthAnchor.constraint(equalToConstant: 308).isActive = true
 
         for platform in CloudPlatform.allCases {
             let btn = makePlatformCard(platform)
@@ -374,6 +400,109 @@ final class PopoverViewController: NSViewController {
         btn.heightAnchor.constraint(equalToConstant: 58).isActive = true
         btn.setAccessibilityLabel("Select \(platform.rawValue)")
         return btn
+    }
+
+    private func buildTelemetryPanel() -> NSView {
+        let outer = vstack(insets: NSEdgeInsets(top: 8, left: 16, bottom: 8, right: 16), spacing: 8)
+
+        let panel = NSView()
+        panel.wantsLayer = true
+        panel.layer?.cornerRadius = 10
+        panel.layer?.backgroundColor = Palette.panel.cgColor
+        panel.translatesAutoresizingMaskIntoConstraints = false
+        panel.widthAnchor.constraint(equalToConstant: 308).isActive = true
+
+        let title = label("Session Monitor", size: 11, weight: .bold, color: .white)
+        title.alignment = .left
+        title.translatesAutoresizingMaskIntoConstraints = false
+
+        let detail = label("Realtime system and network signal", size: 9, weight: .medium, color: Palette.muted)
+        detail.alignment = .left
+        detail.translatesAutoresizingMaskIntoConstraints = false
+
+        cpuStat = statLabel("--")
+        pingStat = statLabel("--")
+        niceStat = statLabel("--")
+        pathStat = statLabel("--")
+        jitterStat = statLabel("--")
+        healthStat = statLabel("--")
+        awdlStat = statLabel("Inactive")
+
+        let topRow = NSStackView()
+        topRow.orientation = .horizontal
+        topRow.distribution = .fillEqually
+        topRow.spacing = 6
+        topRow.translatesAutoresizingMaskIntoConstraints = false
+
+        let bottomRow = NSStackView()
+        bottomRow.orientation = .horizontal
+        bottomRow.distribution = .fillEqually
+        bottomRow.spacing = 6
+        bottomRow.translatesAutoresizingMaskIntoConstraints = false
+
+        let topMetrics: [(String, NSTextField)] = [("CPU", cpuStat), ("PING", pingStat), ("NICE", niceStat)]
+        for item in topMetrics {
+            topRow.addArrangedSubview(compactMetric(title: item.0, value: item.1))
+        }
+
+        let bottomMetrics: [(String, NSTextField)] = [("PATH", pathStat), ("JITTER", jitterStat), ("HEALTH", healthStat), ("AWDL", awdlStat)]
+        for item in bottomMetrics {
+            bottomRow.addArrangedSubview(compactMetric(title: item.0, value: item.1))
+        }
+
+        panel.addSubview(title)
+        panel.addSubview(detail)
+        panel.addSubview(topRow)
+        panel.addSubview(bottomRow)
+
+        NSLayoutConstraint.activate([
+            title.leadingAnchor.constraint(equalTo: panel.leadingAnchor, constant: 12),
+            title.topAnchor.constraint(equalTo: panel.topAnchor, constant: 10),
+            detail.leadingAnchor.constraint(equalTo: title.leadingAnchor),
+            detail.topAnchor.constraint(equalTo: title.bottomAnchor, constant: 2),
+
+            topRow.leadingAnchor.constraint(equalTo: panel.leadingAnchor, constant: 10),
+            topRow.trailingAnchor.constraint(equalTo: panel.trailingAnchor, constant: -10),
+            topRow.topAnchor.constraint(equalTo: detail.bottomAnchor, constant: 10),
+
+            bottomRow.leadingAnchor.constraint(equalTo: topRow.leadingAnchor),
+            bottomRow.trailingAnchor.constraint(equalTo: topRow.trailingAnchor),
+            bottomRow.topAnchor.constraint(equalTo: topRow.bottomAnchor, constant: 6),
+            bottomRow.bottomAnchor.constraint(equalTo: panel.bottomAnchor, constant: -10)
+        ])
+
+        outer.addArrangedSubview(panel)
+        return outer
+    }
+
+    private func compactMetric(title: String, value: NSTextField) -> NSView {
+        let container = NSView()
+        container.wantsLayer = true
+        container.layer?.cornerRadius = 7
+        container.layer?.backgroundColor = Palette.card.cgColor
+        container.translatesAutoresizingMaskIntoConstraints = false
+        container.heightAnchor.constraint(equalToConstant: 40).isActive = true
+
+        let titleLabel = label(title, size: 8, weight: .bold, color: Palette.muted)
+        titleLabel.alignment = .center
+        value.alignment = .center
+        value.font = .monospacedDigitSystemFont(ofSize: 10, weight: .bold)
+        value.lineBreakMode = .byTruncatingTail
+
+        let stack = NSStackView(views: [titleLabel, value])
+        stack.orientation = .vertical
+        stack.spacing = 2
+        stack.alignment = .centerX
+        stack.translatesAutoresizingMaskIntoConstraints = false
+        container.addSubview(stack)
+
+        NSLayoutConstraint.activate([
+            stack.leadingAnchor.constraint(equalTo: container.leadingAnchor, constant: 4),
+            stack.trailingAnchor.constraint(equalTo: container.trailingAnchor, constant: -4),
+            stack.centerYAnchor.constraint(equalTo: container.centerYAnchor)
+        ])
+
+        return container
     }
 
     private func buildStatsRow() -> NSView {
@@ -442,9 +571,70 @@ final class PopoverViewController: NSViewController {
         return row
     }
 
+    private func buildSessionSection() -> NSView {
+        let outer = vstack(insets: NSEdgeInsets(top: 8, left: 16, bottom: 8, right: 16), spacing: 6)
+        outer.addArrangedSubview(sectionLabel("SESSION"))
+
+        pathStat = statLabel("--")
+        jitterStat = statLabel("--")
+        healthStat = statLabel("--")
+        awdlStat = statLabel("Off")
+
+        let row = NSStackView()
+        row.orientation = .horizontal
+        row.distribution = .fillEqually
+        row.spacing = 6
+        row.translatesAutoresizingMaskIntoConstraints = false
+        row.widthAnchor.constraint(equalToConstant: 288).isActive = true
+
+        let metrics: [(String, NSTextField)] = [
+            ("PATH", pathStat),
+            ("JITTER", jitterStat),
+            ("HEALTH", healthStat),
+            ("AWDL", awdlStat),
+        ]
+
+        for (title, value) in metrics {
+            row.addArrangedSubview(sessionMetric(title: title, value: value))
+        }
+
+        outer.addArrangedSubview(row)
+        return outer
+    }
+
+    private func sessionMetric(title: String, value: NSTextField) -> NSView {
+        let card = NSView()
+        card.wantsLayer = true
+        card.layer?.cornerRadius = 8
+        card.layer?.backgroundColor = Palette.card.cgColor
+        card.translatesAutoresizingMaskIntoConstraints = false
+        card.heightAnchor.constraint(equalToConstant: 42).isActive = true
+
+        let titleLabel = label(title, size: 8, weight: .bold, color: Palette.muted)
+        titleLabel.alignment = .center
+        value.alignment = .center
+        value.font = .systemFont(ofSize: 10, weight: .bold)
+        value.lineBreakMode = .byTruncatingTail
+
+        let stack = NSStackView(views: [titleLabel, value])
+        stack.orientation = .vertical
+        stack.spacing = 2
+        stack.alignment = .centerX
+        stack.translatesAutoresizingMaskIntoConstraints = false
+        card.addSubview(stack)
+
+        NSLayoutConstraint.activate([
+            stack.leadingAnchor.constraint(equalTo: card.leadingAnchor, constant: 4),
+            stack.trailingAnchor.constraint(equalTo: card.trailingAnchor, constant: -4),
+            stack.centerYAnchor.constraint(equalTo: card.centerYAnchor)
+        ])
+
+        return card
+    }
+
     private func buildBoostSection() -> NSView {
         let container = fixedHeight(58)
-        container.widthAnchor.constraint(equalToConstant: 320).isActive = true
+        container.widthAnchor.constraint(equalToConstant: 340).isActive = true
         boostButton = GradientButton(frame: .zero)
         boostButton.translatesAutoresizingMaskIntoConstraints = false
         boostButton.target = self
@@ -468,7 +658,7 @@ final class PopoverViewController: NSViewController {
         row.distribution = .fillEqually
         row.spacing      = 6
         row.translatesAutoresizingMaskIntoConstraints = false
-        row.widthAnchor.constraint(equalToConstant: 288).isActive = true
+        row.widthAnchor.constraint(equalToConstant: 308).isActive = true
 
         let isPro = ProManager.shared.isProUnlocked
         for preset in PresetName.allCases {
@@ -514,6 +704,7 @@ final class PopoverViewController: NSViewController {
         hudSwitch        = makeSwitch(Preferences.hudEnabled,        action: #selector(hudToggled))
         notifSwitch      = makeSwitch(Preferences.notificationsEnabled, action: #selector(notifToggled))
         keepAliveSwitch  = makeSwitch(Preferences.keepAliveEnabled,  action: #selector(keepAliveToggled))
+        adaptiveSwitch   = makeSwitch(Preferences.adaptiveIntelligenceEnabled, action: #selector(adaptiveToggled))
 
         let outer = vstack(insets: NSEdgeInsets(top: 8, left: 16, bottom: 8, right: 16), spacing: 6)
         outer.addArrangedSubview(sectionLabel("SETTINGS"))
@@ -523,11 +714,12 @@ final class PopoverViewController: NSViewController {
         card.layer?.cornerRadius    = 10
         card.layer?.backgroundColor = Palette.card.cgColor
         card.translatesAutoresizingMaskIntoConstraints = false
-        card.widthAnchor.constraint(equalToConstant: 288).isActive = true
+        card.widthAnchor.constraint(equalToConstant: 308).isActive = true
 
         let isPro = ProManager.shared.isProUnlocked
         let rows: [(String, String, NSSwitch)] = [
             ("Auto-detect Platform" + (isPro ? "" : " 🔒"), "wand.and.stars",  autoDetectSwitch),
+            ("Adaptive Intelligence" + (isPro ? "" : " 🔒"), "sparkles", adaptiveSwitch),
             ("HUD Overlay",          "gauge.open.with.lines.needle.33percent", hudSwitch),
             ("Notifications",        "bell.badge",       notifSwitch),
             ("Keep Alive" + (isPro ? "" : " 🔒"),           "timer",            keepAliveSwitch),
@@ -544,7 +736,8 @@ final class PopoverViewController: NSViewController {
             let rowView = toggleRow(title: title, icon: icon, toggle: toggle)
 
             if rowIndex == 0 { autoDetectLabel = rowView.label }
-            if rowIndex == 3 { keepAliveLabel = rowView.label }
+            if rowIndex == 1 { adaptiveLabel = rowView.label }
+            if rowIndex == 4 { keepAliveLabel = rowView.label }
 
             cardStack.addArrangedSubview(rowView.view)
 
@@ -554,7 +747,7 @@ final class PopoverViewController: NSViewController {
                 sep.layer?.backgroundColor = Palette.separator.cgColor
                 sep.translatesAutoresizingMaskIntoConstraints = false
                 sep.heightAnchor.constraint(equalToConstant: 1).isActive = true
-                sep.widthAnchor.constraint(equalToConstant: 264).isActive = true
+                sep.widthAnchor.constraint(equalToConstant: 284).isActive = true
                 cardStack.addArrangedSubview(sep)
             }
             rowIndex += 1
@@ -579,7 +772,7 @@ final class PopoverViewController: NSViewController {
         row.edgeInsets  = NSEdgeInsets(top: 0, left: 12, bottom: 0, right: 12)
         row.translatesAutoresizingMaskIntoConstraints = false
         row.heightAnchor.constraint(equalToConstant: 32).isActive = true
-        row.widthAnchor.constraint(equalToConstant: 288).isActive = true
+        row.widthAnchor.constraint(equalToConstant: 308).isActive = true
 
         let iconCfg = NSImage.SymbolConfiguration(pointSize: 11, weight: .medium)
         let iconImg = NSImageView()
@@ -610,7 +803,7 @@ final class PopoverViewController: NSViewController {
         row.spacing      = 6
         row.edgeInsets   = NSEdgeInsets(top: 8, left: 16, bottom: 12, right: 16)
         row.translatesAutoresizingMaskIntoConstraints = false
-        row.widthAnchor.constraint(equalToConstant: 320).isActive = true
+        row.widthAnchor.constraint(equalToConstant: 340).isActive = true
 
         let isPro = ProManager.shared.isProUnlocked
         var items: [(String, String, Selector)] = [
@@ -696,6 +889,14 @@ final class PopoverViewController: NSViewController {
     @objc private func hudToggled()        { onToggleHUD?() }
     @objc private func notifToggled()      { onToggleNotifications?() }
 
+    @objc private func adaptiveToggled() {
+        if adaptiveSwitch.state == .on && !showProPrompt(featureName: "Adaptive Intelligence") {
+            adaptiveSwitch.state = .off
+            return
+        }
+        onToggleAdaptiveIntelligence?()
+    }
+
     @objc private func keepAliveToggled()  {
         if keepAliveSwitch.state == .on && !showProPrompt(featureName: "Keep Alive") {
             keepAliveSwitch.state = .off
@@ -722,7 +923,7 @@ final class PopoverViewController: NSViewController {
 
         let alert = NSAlert()
         alert.messageText = "Unlock CloudBoost PRO"
-        alert.informativeText = "'\(featureName)' is a PRO feature.\nPurchase a license to unlock Auto-Detect,\nExtreme Presets, and additional platforms."
+        alert.informativeText = "'\(featureName)' is a PRO feature.\nPurchase a license to unlock Auto-Detect,\nAdaptive Intelligence, Extreme Presets, and additional platforms."
         alert.alertStyle = .informational
 
         let tf = NSTextField(string: "")
@@ -825,6 +1026,28 @@ final class PopoverViewController: NSViewController {
         niceStat?.stringValue = "\(nice)"
     }
 
+    func updateSession(path: String, jitter: String, health: String, awdl: String) {
+        pathStat?.stringValue = path
+        jitterStat?.stringValue = jitter
+        healthStat?.stringValue = health
+        awdlStat?.stringValue = awdl
+
+        switch health {
+        case "Optimal", "Active":
+            healthStat?.textColor = Palette.green
+        case "Watch":
+            healthStat?.textColor = Palette.amber
+        case "Degraded", "Critical":
+            healthStat?.textColor = Palette.red
+        default:
+            healthStat?.textColor = .white
+        }
+
+        jitterStat?.textColor = jitter == "PRO" ? Palette.amber : .white
+        pathStat?.textColor = path == "Basic" ? Palette.textSecondary : .white
+        awdlStat?.textColor = awdl == AWDLGuardStatus.guarded.rawValue ? Palette.green : Palette.muted
+    }
+
     func updatePreset(_ preset: PresetName) {
         for (p, btn) in presetButtons {
             btn.normalBgColor = (p == preset) ? Palette.cardSelected : Palette.card
@@ -902,7 +1125,10 @@ final class PopoverViewController: NSViewController {
     private func refreshSettingsLabels() {
         let isPro = ProManager.shared.isProUnlocked
         autoDetectLabel?.stringValue = isPro ? "Auto-detect Platform" : "Auto-detect Platform 🔒"
+        adaptiveLabel?.stringValue = isPro ? "Adaptive Intelligence" : "Adaptive Intelligence 🔒"
         keepAliveLabel?.stringValue = isPro ? "Keep Alive" : "Keep Alive 🔒"
+        planPillLabel?.stringValue = isPro ? "PRO" : "FREE"
+        planPillLabel?.textColor = isPro ? Palette.green : Palette.muted
     }
 
     private func refreshStatusPill() {
@@ -929,6 +1155,7 @@ final class PopoverViewController: NSViewController {
 
     private func syncSwitches() {
         autoDetectSwitch?.state = Preferences.autoDetectEnabled ? .on : .off
+        adaptiveSwitch?.state   = (ProManager.shared.isProUnlocked && Preferences.adaptiveIntelligenceEnabled) ? .on : .off
         hudSwitch?.state        = Preferences.hudEnabled        ? .on : .off
         notifSwitch?.state      = Preferences.notificationsEnabled ? .on : .off
         keepAliveSwitch?.state  = Preferences.keepAliveEnabled  ? .on : .off
@@ -949,7 +1176,7 @@ final class PopoverViewController: NSViewController {
         v.layer?.backgroundColor = Palette.separator.cgColor
         v.translatesAutoresizingMaskIntoConstraints = false
         v.heightAnchor.constraint(equalToConstant: 1).isActive = true
-        v.widthAnchor.constraint(equalToConstant: 320).isActive = true
+        v.widthAnchor.constraint(equalToConstant: 340).isActive = true
         return v
     }
 
@@ -960,7 +1187,7 @@ final class PopoverViewController: NSViewController {
         s.alignment   = .centerX
         s.edgeInsets  = insets
         s.translatesAutoresizingMaskIntoConstraints = false
-        s.widthAnchor.constraint(equalToConstant: 320).isActive = true
+        s.widthAnchor.constraint(equalToConstant: 340).isActive = true
         return s
     }
 
@@ -1014,7 +1241,7 @@ final class PopoverViewController: NSViewController {
                 return v
             }
         }
-        cachedVersion = "3.0.2"
-        return "3.0.2"
+        cachedVersion = "3.0.4"
+        return "3.0.4"
     }
 }

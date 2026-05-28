@@ -9,6 +9,7 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
     private var hudController:    HUDWindowController?
     private var autoDetectTimer:  Timer?
     private var statsSampleTimer: Timer?
+    private var isStatsSampleInFlight = false
 
     // App state (single source of truth)
     private var isBoosterActive = false
@@ -94,6 +95,11 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
             Preferences.keepAliveEnabled.toggle()
             self?.updateKeepAliveIfNeeded()
             DiagnosticsManager.shared.log("Keep-alive: \(Preferences.keepAliveEnabled)")
+        }
+
+        vc.onToggleAdaptiveIntelligence = {
+            Preferences.adaptiveIntelligenceEnabled.toggle()
+            DiagnosticsManager.shared.log("Adaptive Intelligence: \(Preferences.adaptiveIntelligenceEnabled)")
         }
 
         vc.onExportDiagnostics = { [weak self] in
@@ -217,6 +223,7 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
         } else {
             stopStatsSampling()
             popoverCtrl.viewController.updateStats(cpu: "—", ping: "—", nice: "—")
+            popoverCtrl.viewController.updateSession(path: "--", jitter: "--", health: "--", awdl: SystemManager.shared.awdlGuardStatus().rawValue)
             hudController?.update(text: "CloudBoost · Boost OFF")
         }
     }
@@ -235,6 +242,9 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func sampleStats() {
+        guard !isStatsSampleInFlight else { return }
+        isStatsSampleInFlight = true
+
         let platform     = selectedPlatform
         let processNames = platform.processNames
         DispatchQueue.global(qos: .userInitiated).async { [weak self] in
@@ -242,10 +252,36 @@ public class AppDelegate: NSObject, NSApplicationDelegate {
             let pid   = SystemManager.shared.firstMatchingPid(processNames)
             let cpu   = pid.flatMap { SystemManager.shared.readCpuUsage(pid: $0)  } ?? "—"
             let nice  = pid.flatMap { SystemManager.shared.readNiceValue(pid: $0) } ?? "—"
-            let ping  = SystemManager.shared.pingStats()
-            let hudText = "\(platform.shortName) CPU \(cpu)%  \(ping)  n\(nice)"
+            let awdlStatus = SystemManager.shared.awdlGuardStatus().rawValue
+            let useAdaptive = ProManager.shared.isProUnlocked && Preferences.adaptiveIntelligenceEnabled
+
+            let ping: String
+            let path: String
+            let jitter: String
+            let health: String
+
+            if useAdaptive {
+                let metrics = SystemObservabilityManager.shared.sample()
+                let assessment = OptimizationEngine.shared.assess(metrics: metrics)
+                ping = metrics.latency.displayLatency
+                path = metrics.networkPath.interface.rawValue
+                jitter = metrics.latency.displayJitter
+                health = assessment.health.rawValue
+            } else {
+                ping = SystemManager.shared.pingStats()
+                path = "Basic"
+                jitter = ProManager.shared.isProUnlocked ? "Off" : "PRO"
+                health = isBoosterActive ? "Active" : "--"
+            }
+
+            let hudText = "\(platform.shortName) CPU \(cpu)%  \(ping)  \(jitter)  n\(nice)  \(health)  AWDL \(awdlStatus)"
             DispatchQueue.main.async {
+                self.isStatsSampleInFlight = false
                 self.popoverCtrl.viewController.updateStats(cpu: cpu, ping: ping, nice: nice)
+                self.popoverCtrl.viewController.updateSession(path: path,
+                                                              jitter: jitter,
+                                                              health: health,
+                                                              awdl: awdlStatus)
                 self.hudController?.update(text: hudText)
             }
         }
