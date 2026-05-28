@@ -13,7 +13,7 @@ CloudBoost is a lightweight menu bar app built in Swift to reduce micro-stutters
 </p>
 
 <p align="center">
-  <img src="./assets/img1.png" alt="CloudBoost Screenshot"/>
+  <img src="./assets/cloudboost-readme.png" alt="CloudBoost 3.0.4 interface preview"/>
 </p>
 
 ## Download
