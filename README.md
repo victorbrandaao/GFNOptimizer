@@ -18,6 +18,8 @@ CloudBoost is a lightweight menu bar app built in Swift to reduce micro-stutters
 
 ## Download
 
+Visit the [CloudBoost website](https://victorbrandaao.github.io/CloudBoost/) or download the latest release directly from GitHub.
+
 Download the latest release from the [Releases page](https://github.com/victorbrandaao/CloudBoost/releases).
 
 For the CloudBoost 3.1.0 beta, download **CloudBoost_v3.1.0-beta.dmg**, open the disk image, and drag **CloudBoost.app** to `/Applications`.
