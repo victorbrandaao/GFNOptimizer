@@ -22,7 +22,7 @@ Visit the [CloudBoost website](https://victorbrandaao.github.io/CloudBoost/) or 
 
 Download the latest release from the [Releases page](https://github.com/victorbrandaao/CloudBoost/releases).
 
-For the CloudBoost 3.1.0 beta, download **CloudBoost_v3.1.0-beta.dmg**, open the disk image, and drag **CloudBoost.app** to `/Applications`.
+For CloudBoost 3.1.0, download **CloudBoost_v3.1.0.dmg**, open the disk image, and drag **CloudBoost.app** to `/Applications`.
 
 > **Gatekeeper note:** Because CloudBoost is independently signed, macOS may show an "App is damaged" warning on first launch. To clear the quarantine flag, run:
 >
@@ -38,13 +38,13 @@ This repository is used for public releases, documentation, and downloadable bin
 |---|---|
 | GeForce NOW | Free |
 | Xbox Cloud Gaming (xCloud) | Free |
-| Boosteroid | PRO |
-| Moonlight | PRO |
-| VoidLink Extreme | PRO |
+| Boosteroid | Free |
+| Moonlight | Free |
+| VoidLink Extreme | Free |
 | Local Game | Free |
-| Steam | PRO |
-| Epic Games | PRO |
-| Battle.net | PRO |
+| Steam | Free |
+| Epic Games | Free |
+| Battle.net | Free |
 
 ## What CloudBoost Does
 
@@ -69,7 +69,7 @@ All changes are designed to be temporary and reversible.
 
 ## CloudBoost PRO
 
-CloudBoost PRO unlocks advanced automation and observability features:
+CloudBoost PRO unlocks advanced automation, presets, and observability add-ons. Core cloud gaming and Mac gaming profiles are available for free.
 
 | Feature | Free | PRO |
 |---|---:|---:|
@@ -78,8 +78,8 @@ CloudBoost PRO unlocks advanced automation and observability features:
 | AWDL Guard rollback protection | Yes | Yes |
 | Balanced preset | Yes | Yes |
 | Local Game profile | Yes | Yes |
-| Boosteroid, Moonlight, VoidLink Extreme | No | Yes |
-| Steam, Epic Games, Battle.net profiles | No | Yes |
+| Boosteroid, Moonlight, VoidLink Extreme | Yes | Yes |
+| Steam, Epic Games, Battle.net profiles | Yes | Yes |
 | Auto-Detect platform switching | No | Yes |
 | Auto Boost | No | Yes |
 | Competitive and Stream Quality presets | No | Yes |
@@ -90,7 +90,7 @@ CloudBoost PRO unlocks advanced automation and observability features:
 
 Adaptive Intelligence monitors route type, latency, jitter, packet loss, thermal pressure, Low Power Mode, and common background interference to classify session health in real time.
 
-To activate PRO, purchase a license on [Gumroad](https://victorbrandao0.gumroad.com/l/CloudBoost), then click any locked feature in CloudBoost and enter the license key.
+To activate PRO, purchase a license on [Gumroad](https://victorbrandao0.gumroad.com/l/CloudBoost), then click any locked add-on in CloudBoost and enter the license key.
 
 ## Features
 
